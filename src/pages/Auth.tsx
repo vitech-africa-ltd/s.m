@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useApp, setSession, mutate, audit, uid, todayISO, COUNTRIES, getState, type User, type Role } from "../lib/data";
+import { useApp, setSession, mutate, audit, uid, todayISO, COUNTRIES, CURRENCIES, CURRENCY_MAP, fxRateLabel, getState, type User, type Role } from "../lib/data";
 import { Ic } from "../components/icons";
 import { toast, Field } from "../components/ui";
 
@@ -109,6 +109,7 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [country, setCountry] = useState("Rwanda");
+  const [currency, setCurrency] = useState("RWF");
   const [phone, setPhone] = useState("+250 788 000 000");
   const [emailS, setEmailS] = useState("");
   const [adminName, setAdminName] = useState("");
@@ -121,7 +122,7 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
 
   const create = () => {
     mutate((db) => {
-      db.school.name = name || "My New Academy"; db.school.country = country; db.school.currency = c.currency;
+      db.school.name = name || "My New Academy"; db.school.country = country; db.school.currency = currency;
       db.school.timezone = c.tz; db.school.phone = phone; db.school.email = emailS; db.school.academicYear = year;
       db.tenants.unshift({ id: uid(), name: name || "My New Academy", city: country, plan: "Professional", students: 0, status: "trial", mrr: 0, joined: todayISO() });
       db.users.push({ id: uid(), name: adminName || "School Admin", email: adminEmail || "admin@myschool.edu", pass: pass || "demo1234", role: "admin", twoFA: false, hue: 210 });
@@ -157,14 +158,20 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
             <Field label="Password"><input className="input" type="password" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="Min. 8 characters" /></Field>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Country">
-                <select className="input" value={country} onChange={(e) => { const cc = e.target.value; setCountry(cc); const inf = COUNTRIES[cc]; if (inf) { setPhone(inf.phone); toast(`Currency set to ${inf.currency} · ${inf.tz}`, "info"); } }}>
+                <select className="input" value={country} onChange={(e) => { const cc = e.target.value; setCountry(cc); const inf = COUNTRIES[cc]; if (inf) { setPhone(inf.phone); setCurrency(inf.currency); toast(`Currency ${inf.currency} · ${inf.tz} auto-configured`, "info"); } }}>
                   {Object.keys(COUNTRIES).map((k) => <option key={k}>{k}</option>)}
                 </select>
               </Field>
               <Field label="Phone"><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
             </div>
-            <div className="rounded-lg bg-ink-50 dark:bg-ink-950/60 border border-ink-100 dark:border-ink-800 px-4 py-3 text-[12.5px] font-semibold text-ink-500 dark:text-ink-300 flex items-center gap-2">
-              <Ic n="globe" size={15} className="text-cobalt-600 dark:text-cobalt-300" />Auto-detected: currency <b>{c.currency}</b> · timezone <b>{c.tz}</b>
+            <div className="rounded-xl bg-ink-50 dark:bg-ink-950/60 border border-ink-100 dark:border-ink-800 px-4 py-3.5 flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-500 dark:text-ink-300"><Ic n="globe" size={15} className="text-cobalt-600 dark:text-cobalt-300" />Auto-detected:</span>
+              <span className="chip bg-cobalt-100 text-cobalt-700 dark:bg-cobalt-500/15 dark:text-cobalt-300">{CURRENCY_MAP[currency]?.flag} {currency} — {CURRENCY_MAP[currency]?.symbol}</span>
+              <span className="chip bg-gold-100 text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 font-mono !text-[10.5px]">{fxRateLabel("USD", currency)}</span>
+              <span className="chip bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-300">{c.tz}</span>
+              <select className="input !h-8 !w-auto !text-[12px] ml-auto" value={currency} onChange={(e) => setCurrency(e.target.value)} aria-label="Override currency">
+                {CURRENCIES.map((cur) => <option key={cur.code} value={cur.code}>{cur.flag} {cur.code} · {cur.name}</option>)}
+              </select>
             </div>
           </div>
         )}
@@ -198,7 +205,7 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
             <span className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 flex items-center justify-center mx-auto"><Ic n="check" size={30} sw={2.4} /></span>
             <h3 className="font-display text-[22px] font-bold mt-4">{name || "My New Academy"} is ready</h3>
             <p className="text-[13.5px] text-ink-400 mt-1.5 max-w-sm mx-auto">Demo students, teachers, fees and one full academic year of data are preloaded so you can explore every module immediately. Replace them anytime — or reset from Settings.</p>
-            <div className="flex flex-wrap justify-center gap-2 mt-5">{["14-day trial", "Professional plan", `${levels.length * 2} classes`, c.currency].map((x) => <span key={x} className="chip bg-ink-100 dark:bg-ink-800 text-ink-600 dark:text-ink-200">{x}</span>)}</div>
+            <div className="flex flex-wrap justify-center gap-2 mt-5">{["14-day trial", "Professional plan", `${levels.length * 2} classes`, `${CURRENCY_MAP[currency]?.flag} ${currency}`].map((x) => <span key={x} className="chip bg-ink-100 dark:bg-ink-800 text-ink-600 dark:text-ink-200">{x}</span>)}</div>
           </div>
         )}
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useApp, fmtMoney, fmtNum, attPct, todayISO } from "../lib/data";
+import { useApp, fmtMoney, fmtNum, attPct, todayISO, CURRENCIES, CURRENCY_MAP, fmtMoneyConv, fxRateLabel } from "../lib/data";
 import { Ic } from "../components/icons";
 import { Reveal, AreaChart } from "../components/ui";
 import { LANGS, t } from "../lib/i18n";
@@ -80,7 +80,7 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
   const s = useApp();
   const { school, plans } = s.db;
   const lang = s.prefs.lang;
-  const cur = "USD";
+  const [priceCur, setPriceCur] = useState("USD");
 
   const features: { ic: string; title: string; body: string; big?: boolean }[] = [
     { ic: "students", title: "Student Management", body: "Complete profiles, admissions workflow, ID cards, transfers, archives and parent links — every record one click away.", big: true },
@@ -243,6 +243,16 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
             <div className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold-600 dark:text-gold-400">Pricing</div>
             <h2 className="font-display text-[32px] sm:text-[40px] font-bold tracking-tight mt-2">Plans that scale with your school</h2>
             <p className="text-ink-400 text-[14.5px] mt-3">Prices, limits and features are fully editable by the platform owner — in any currency.</p>
+            <div className="flex items-center justify-center gap-2 flex-wrap mt-5">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400">Show prices in</span>
+              {["USD", "EUR", "RWF", "KES", "XAF", "NGN"].map((cc) => (
+                <button key={cc} onClick={() => setPriceCur(cc)}
+                  className={`chip cursor-pointer !py-1.5 !px-3 transition-all ${priceCur === cc ? "bg-ink-950 text-white dark:bg-ink-100 dark:text-ink-900 shadow-panel" : "bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-300 hover:bg-cobalt-100 dark:hover:bg-cobalt-500/15"}`}>
+                  {CURRENCY_MAP[cc]?.flag} {cc}
+                </button>
+              ))}
+            </div>
+            {priceCur !== "USD" && <div className="chip bg-gold-100 text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 font-mono mx-auto mt-3 !py-1.5">{fxRateLabel("USD", priceCur)} · converted automatically</div>}
           </div>
         </Reveal>
         <div className="grid md:grid-cols-3 gap-5 items-stretch">
@@ -251,10 +261,11 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
               <div className={`panel p-7 h-full flex flex-col relative ${p.highlight ? "!bg-ink-950 !text-ink-100 !border-cobalt-700 shadow-pop md:-translate-y-3" : "hover:shadow-lift hover:-translate-y-1 transition-all duration-200"}`}>
                 {p.highlight && <span className="absolute -top-3 left-6 chip bg-gold-400 text-ink-950 !px-3 !py-1">Most popular</span>}
                 <h3 className="font-display font-bold text-[20px]">{p.name}</h3>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="font-display text-[42px] font-bold tnum leading-none">{cur === "USD" ? "$" : ""}{p.price}</span>
-                  <span className={`text-[13px] font-semibold ${p.highlight ? "text-ink-400" : "text-ink-400"}`}>{p.period}</span>
+                <div className="mt-3 flex items-baseline gap-1.5 flex-wrap">
+                  <span className="font-display text-[42px] font-bold tnum leading-none">{fmtMoneyConv(p.price, "USD", priceCur)}</span>
+                  <span className="text-[13px] font-semibold text-ink-400">{p.period}</span>
                 </div>
+                {priceCur !== "USD" && <div className={`text-[11.5px] font-bold tnum mt-1 ${p.highlight ? "text-ink-400" : "text-ink-300"}`}>≈ ${p.price} USD</div>}
                 <div className={`text-[12.5px] font-bold mt-2 ${p.highlight ? "text-gold-400" : "text-cobalt-600 dark:text-cobalt-400"}`}>
                   {p.students === "Unlimited" ? "Unlimited students" : `Up to ${fmtNum(p.students)} students`} · {p.teachers === "Unlimited" ? "unlimited teachers" : `${p.teachers} teachers`} · {p.storage}
                 </div>

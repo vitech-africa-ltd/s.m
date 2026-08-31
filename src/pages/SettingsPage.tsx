@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useApp, mutate, audit, resetDemo, COUNTRIES, type GradeScale } from "../lib/data";
+import { useApp, mutate, audit, resetDemo, COUNTRIES, CURRENCIES, CURRENCY_MAP, changeCurrency, fxRateLabel, fmtMoney, fmtMoneyConv, feeTotal, type GradeScale } from "../lib/data";
 import { Ic } from "../components/icons";
-import { Field, Chip, toast, Confirm } from "../components/ui";
+import { Field, Chip, toast, Confirm, Modal } from "../components/ui";
 import { PageHead } from "./Dashboard";
 
 export default function SettingsPage() {
@@ -10,6 +10,15 @@ export default function SettingsPage() {
   const [tab, setTab] = useState("school");
   const [school, setSchool] = useState({ ...db.school });
   const [reset, setReset] = useState(false);
+  const [curPick, setCurPick] = useState(false);
+  const [curSearch, setCurSearch] = useState("");
+  const [curTarget, setCurTarget] = useState<string | null>(null);
+  const [convAmt, setConvAmt] = useState("150000");
+  const [convTo, setConvTo] = useState("USD");
+  const savedCur = db.school.currency;
+  const savedDef = CURRENCY_MAP[savedCur];
+  const curAmount = parseFloat(convAmt) || 0;
+  const recCount = db.feeStructures.reduce((a, f) => a + f.items.length, 0) + db.payments.length + db.expenses.length + db.teachers.length + db.staff.length + db.routes.length;
   const up = (k: string, v: string | number) => setSchool((p) => ({ ...p, [k]: v }));
   const saveSchool = () => {
     mutate((db) => { db.school = { ...school }; });
@@ -45,7 +54,17 @@ export default function SettingsPage() {
             <Field label="Country">
               <select className="input" value={school.country} onChange={(e) => setCountry(e.target.value)}>{Object.keys(COUNTRIES).map((c) => <option key={c}>{c}</option>)}</select>
             </Field>
-            <Field label="Currency (auto from country)"><input className="input" value={school.currency} onChange={(e) => up("currency", e.target.value)} /></Field>
+            <Field label="Currency — exchange rate applied automatically">
+              <button type="button" onClick={() => { setCurPick(true); setCurTarget(null); setCurSearch(""); }}
+                className="input flex items-center justify-between text-left cursor-pointer hover:border-cobalt-400 transition-colors group">
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-[16px] leading-none">{savedDef?.flag}</span>
+                  <b className="font-display text-[15px]">{savedCur}</b>
+                  <span className="text-ink-400 text-[12px] truncate">{savedDef?.symbol} · {savedDef?.name}</span>
+                </span>
+                <span className="flex items-center gap-1.5 shrink-0 text-cobalt-600 dark:text-cobalt-300 text-[12px] font-bold">Change<Ic n="chevR" size={13} /></span>
+              </button>
+            </Field>
             <Field label="Timezone (auto)"><input className="input" value={school.timezone} onChange={(e) => up("timezone", e.target.value)} /></Field>
             <Field label="Date format"><select className="input" value={school.dateFormat} onChange={(e) => up("dateFormat", e.target.value)}>{["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"].map((d) => <option key={d}>{d}</option>)}</select></Field>
           </div>
@@ -86,11 +105,50 @@ export default function SettingsPage() {
       {tab === "finance" && (
         <div className="grid lg:grid-cols-2 gap-4 max-w-5xl">
           <div className="panel p-6">
-            <h3 className="font-display font-bold text-[16px] mb-4">Currency & numbering</h3>
-            <div className="space-y-4">
-              <Field label="Currency code"><input className="input" value={school.currency} onChange={(e) => up("currency", e.target.value)} /></Field>
-              <Field label="Receipt prefix"><input className="input" value={school.receiptPrefix} onChange={(e) => up("receiptPrefix", e.target.value)} /></Field>
-              <Field label="Registration number prefix"><input className="input" value={school.regPrefix} onChange={(e) => up("regPrefix", e.target.value)} /></Field>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-bold text-[16px]">Currency & exchange rate</h3>
+              <Chip tone="green"><i className="w-1.5 h-1.5 rounded-full bg-emerald-500 tick-pulse" />Auto-conversion</Chip>
+            </div>
+            <div className="rounded-xl bg-ink-950 text-white p-5 flex items-center gap-4">
+              <span className="w-14 h-14 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center font-display font-bold text-gold-400 text-[17px] shrink-0">{savedDef?.symbol.trim()}</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2"><b className="font-display text-[21px] leading-none">{savedCur}</b><span className="text-[15px]">{savedDef?.flag}</span></div>
+                <div className="text-[12px] text-ink-300 mt-1 truncate">{savedDef?.name} · {savedDef?.symbol}</div>
+              </div>
+              <button className="btn-gold btn-sm ml-auto shrink-0" onClick={() => { setCurPick(true); setCurTarget(null); setCurSearch(""); }}><Ic n="swap" size={14} />Change</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="rounded-lg border border-ink-100 dark:border-ink-800 px-4 py-3">
+                <div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-400">Base rate</div>
+                <div className="font-display font-bold text-[15px] tnum mt-0.5">{fxRateLabel("USD", savedCur)}</div>
+              </div>
+              <div className="rounded-lg border border-ink-100 dark:border-ink-800 px-4 py-3">
+                <div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-400">Inverse</div>
+                <div className="font-display font-bold text-[15px] tnum mt-0.5">{fxRateLabel(savedCur, "USD")}</div>
+              </div>
+            </div>
+            <p className="text-[12.5px] text-ink-400 leading-relaxed mt-4">When the currency changes, <b className="text-ink-600 dark:text-ink-200">{recCount.toLocaleString()} monetary records</b> — fee structures, payments, expenses, salaries and transport fees — are converted automatically at the exchange rate. Nothing is lost or left in the old currency.</p>
+          </div>
+          <div className="panel p-6">
+            <h3 className="font-display font-bold text-[16px] mb-4">Live converter</h3>
+            <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+              <Field label={`Amount in ${savedCur}`}><input type="number" className="input tnum" value={convAmt} onChange={(e) => setConvAmt(e.target.value)} /></Field>
+              <Field label="Convert to">
+                <select className="input !w-[130px]" value={convTo} onChange={(e) => setConvTo(e.target.value)}>
+                  {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
+                </select>
+              </Field>
+            </div>
+            <div className="rounded-xl bg-cobalt-50 dark:bg-cobalt-500/10 border border-cobalt-200 dark:border-cobalt-800 px-5 py-4 mt-4 flex items-center justify-between gap-3">
+              <span className="text-[12px] font-bold uppercase tracking-[0.1em] text-cobalt-500 dark:text-cobalt-300">Equivalent</span>
+              <span className="font-display font-bold text-[24px] tnum text-cobalt-800 dark:text-cobalt-200">{fmtMoneyConv(curAmount, savedCur, convTo)}</span>
+            </div>
+            <p className="text-[11.5px] text-ink-400 font-semibold mt-2">{fxRateLabel(savedCur, convTo)}</p>
+            <div className="border-t border-ink-100 dark:border-ink-800 mt-4 pt-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Receipt prefix"><input className="input" value={school.receiptPrefix} onChange={(e) => up("receiptPrefix", e.target.value)} /></Field>
+                <Field label="Registration number prefix"><input className="input" value={school.regPrefix} onChange={(e) => up("regPrefix", e.target.value)} /></Field>
+              </div>
               <button className="btn-p w-full" onClick={saveSchool}><Ic n="check" size={15} />Save finance settings</button>
             </div>
           </div>
@@ -196,6 +254,74 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+      {/* ---- Currency picker & conversion ---- */}
+      <Modal open={curPick} onClose={() => { setCurPick(false); setCurTarget(null); }}
+        title={curTarget ? `Switch currency to ${curTarget}` : "Select currency"} w={curTarget ? "max-w-md" : "max-w-xl"}
+        footer={curTarget ? (
+          <>
+            <button className="btn-o" onClick={() => setCurTarget(null)}><Ic n="chevL" size={14} />Back</button>
+            <button className="btn-p" onClick={() => {
+              const from = savedCur;
+              const res = changeCurrency(curTarget);
+              audit("CHANGE_CURRENCY", "Finance", `${from} → ${curTarget} · ${res.converted} monetary records converted at ${fxRateLabel(from, curTarget)}`);
+              setSchool((p) => ({ ...p, currency: curTarget }));
+              toast(`${res.converted.toLocaleString()} amounts converted ${from} → ${curTarget}`);
+              setCurPick(false); setCurTarget(null);
+            }}><Ic n="refresh" size={15} />Convert {recCount.toLocaleString()} records</button>
+          </>
+        ) : undefined}>
+        {!curTarget ? (
+          <div>
+            <div className="relative mb-3">
+              <Ic n="search" size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
+              <input autoFocus className="input !pl-9" placeholder="Search 18 currencies — code, name or symbol…" value={curSearch} onChange={(e) => setCurSearch(e.target.value)} />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-2 max-h-[46vh] overflow-y-auto pr-1">
+              {CURRENCIES.filter((c) => `${c.code} ${c.name} ${c.symbol}`.toLowerCase().includes(curSearch.toLowerCase())).map((c) => {
+                const current = c.code === savedCur;
+                return (
+                  <button key={c.code} onClick={() => (current ? setCurPick(false) : setCurTarget(c.code))}
+                    className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all cursor-pointer hover:-translate-y-0.5 ${current ? "border-emerald-400 dark:border-emerald-600 bg-emerald-50/60 dark:bg-emerald-500/10" : "border-ink-100 dark:border-ink-800 hover:border-cobalt-300 dark:hover:border-cobalt-700 hover:shadow-panel"}`}>
+                    <span className="text-[19px] leading-none">{c.flag}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2"><b className="font-display text-[14.5px]">{c.code}</b><span className="text-[12px] text-ink-400 truncate">{c.name}</span></span>
+                      <span className="block text-[10.5px] font-bold text-ink-300 tnum mt-0.5">{c.code === "USD" ? "Base currency" : fxRateLabel("USD", c.code)}</span>
+                    </span>
+                    <span className="w-9 h-9 rounded-lg bg-ink-50 dark:bg-ink-800 flex items-center justify-center font-display font-bold text-[11px] text-ink-600 dark:text-ink-200 shrink-0">{c.symbol.trim().slice(0, 4)}</span>
+                    {current && <Chip tone="green" className="shrink-0"><Ic n="check" size={11} />Active</Chip>}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11.5px] text-ink-400 font-semibold mt-3 flex items-center gap-1.5"><Ic n="info" size={13} />Rates update against the US Dollar. Switching converts every amount in the system automatically.</p>
+          </div>
+        ) : (
+          <div>
+            <div className="rounded-xl bg-ink-50 dark:bg-ink-950/60 border border-ink-100 dark:border-ink-800 p-5 text-center">
+              <div className="flex items-center justify-center gap-4">
+                <span className="font-display font-bold text-[22px]">{CURRENCY_MAP[savedCur]?.flag} {savedCur}</span>
+                <span className="w-10 h-10 rounded-full bg-cobalt-600 text-white flex items-center justify-center"><Ic n="chevR" size={18} /></span>
+                <span className="font-display font-bold text-[22px]">{CURRENCY_MAP[curTarget]?.flag} {curTarget}</span>
+              </div>
+              <div className="chip bg-gold-100 text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 mx-auto mt-3 !py-1.5 font-mono">{fxRateLabel(savedCur, curTarget)}</div>
+            </div>
+            <div className="space-y-2 mt-4 text-[13px]">
+              {[
+                ["Senior 4 tuition", feeTotal(db, 4)],
+                ["Sample payment", db.payments[0]?.amount ?? 0],
+                ["Average teacher salary", Math.round(db.teachers.reduce((a, b) => a + b.salary, 0) / Math.max(1, db.teachers.length))],
+              ].map(([label, v]) => (
+                <div key={label as string} className="flex items-center justify-between rounded-lg border border-ink-100 dark:border-ink-800 px-3.5 py-2.5">
+                  <span className="font-semibold text-ink-500 dark:text-ink-300">{label}</span>
+                  <span className="font-bold tnum"><span className="text-ink-400 line-through decoration-rose-400/70 mr-2">{fmtMoney(v as number, savedCur)}</span>{fmtMoneyConv(v as number, savedCur, curTarget)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[12px] text-ink-400 leading-relaxed mt-3.5 flex gap-2"><Ic n="shield" size={14} className="text-emerald-500 shrink-0 mt-0.5" />All {recCount.toLocaleString()} fee items, payments, expenses, salaries and transport fees will be converted. The change is recorded in the audit log.</p>
+          </div>
+        )}
+      </Modal>
+
       <Confirm open={reset} onClose={() => setReset(false)} title="Reset all demo data?" body="All changes you made (students, payments, settings) will be replaced with the original demonstration dataset." yes="Reset everything"
         onYes={() => { resetDemo(); toast("Demo data restored"); }} />
     </div>

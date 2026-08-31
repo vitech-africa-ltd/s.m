@@ -71,7 +71,45 @@ export const daysAhead = (n: number) => daysAgo(-n);
 export const fmtDate = (iso: string) => { const d = new Date(iso + "T12:00:00"); return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); };
 export const fmtDateShort = (iso: string) => { const d = new Date(iso + "T12:00:00"); return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }); };
 export const monthLabel = (key: string) => { const d = new Date(key + "-15T12:00:00"); return d.toLocaleDateString("en-GB", { month: "short" }); };
-export const fmtMoney = (n: number, cur: string) => `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(n))} ${cur}`;
+/* ============================== Currencies & FX ============================== */
+export interface CurrencyDef { code: string; name: string; symbol: string; rate: number; flag: string; }
+export const CURRENCIES: CurrencyDef[] = [
+  { code: "USD", name: "US Dollar", symbol: "$", rate: 1, flag: "🇺🇸" },
+  { code: "EUR", name: "Euro", symbol: "€", rate: 0.92, flag: "🇪🇺" },
+  { code: "GBP", name: "British Pound", symbol: "£", rate: 0.79, flag: "🇬🇧" },
+  { code: "RWF", name: "Rwandan Franc", symbol: "FRw", rate: 1300, flag: "🇷🇼" },
+  { code: "CDF", name: "Congolese Franc", symbol: "FC", rate: 2850, flag: "🇨🇩" },
+  { code: "KES", name: "Kenyan Shilling", symbol: "KSh", rate: 129, flag: "🇰🇪" },
+  { code: "UGX", name: "Ugandan Shilling", symbol: "USh", rate: 3700, flag: "🇺🇬" },
+  { code: "TZS", name: "Tanzanian Shilling", symbol: "TSh", rate: 2600, flag: "🇹🇿" },
+  { code: "BIF", name: "Burundian Franc", symbol: "FBu", rate: 2950, flag: "🇧🇮" },
+  { code: "XAF", name: "Central African CFA", symbol: "FCFA", rate: 605, flag: "🇨🇲" },
+  { code: "XOF", name: "West African CFA", symbol: "CFA", rate: 605, flag: "🇸🇳" },
+  { code: "NGN", name: "Nigerian Naira", symbol: "₦", rate: 1550, flag: "🇳🇬" },
+  { code: "GHS", name: "Ghanaian Cedi", symbol: "GH₵", rate: 15.6, flag: "🇬🇭" },
+  { code: "ZAR", name: "South African Rand", symbol: "R", rate: 18.2, flag: "🇿🇦" },
+  { code: "MAD", name: "Moroccan Dirham", symbol: "DH", rate: 10.1, flag: "🇲🇦" },
+  { code: "EGP", name: "Egyptian Pound", symbol: "E£", rate: 49, flag: "🇪🇬" },
+  { code: "AED", name: "UAE Dirham", symbol: "AED ", rate: 3.67, flag: "🇦🇪" },
+  { code: "INR", name: "Indian Rupee", symbol: "₹", rate: 83.5, flag: "🇮🇳" },
+];
+export const CURRENCY_MAP: Record<string, CurrencyDef> = Object.fromEntries(CURRENCIES.map((c) => [c.code, c]));
+export const convert = (v: number, from: string, to: string) => v * ((CURRENCY_MAP[to]?.rate ?? 1) / (CURRENCY_MAP[from]?.rate ?? 1));
+export const fxRateLabel = (from: string, to: string) => {
+  const r = (CURRENCY_MAP[to]?.rate ?? 1) / (CURRENCY_MAP[from]?.rate ?? 1);
+  const shown = r >= 100 ? Math.round(r).toLocaleString("en-US") : r >= 1 ? r.toFixed(2) : r.toFixed(4);
+  return `1 ${from} = ${shown} ${to}`;
+};
+const roundSmart = (v: number, rate: number) => (rate >= 500 ? Math.round(v / 100) * 100 : rate >= 50 ? Math.round(v / 10) * 10 : Math.round(v * 100) / 100);
+export const fmtMoney = (n: number, cur: string) => {
+  const c = CURRENCY_MAP[cur];
+  const num = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(n));
+  return c ? `${c.symbol} ${num}` : `${num} ${cur}`;
+};
+export const fmtMoneyConv = (v: number, from: string, to: string) => {
+  const t = CURRENCY_MAP[to];
+  return t ? fmtMoney(roundSmart(convert(v, from, to), t.rate), to) : fmtMoney(convert(v, from, to), to);
+};
 export const fmtNum = (n: number) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(n);
 export const initials = (f: string, l: string) => `${f[0] ?? ""}${l[0] ?? ""}`.toUpperCase();
 export const monthKeys = (n: number) => { const out: string[] = []; const d = new Date(); d.setDate(1); for (let i = n - 1; i >= 0; i--) { const m = new Date(d.getFullYear(), d.getMonth() - i, 1); out.push(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`); } return out; };
@@ -460,6 +498,26 @@ export function mutate(fn: (db: DB) => void) { fn(state.db); state = { ...state,
 export const setSession = (s: AppState["session"]) => { state = { ...state, session: s }; persist(); emit(); };
 export const setPrefs = (p: Partial<AppState["prefs"]>) => { state = { ...state, prefs: { ...state.prefs, ...p } }; persist(); emit(); };
 export function resetDemo() { state = { db: seed(), session: state.session, prefs: state.prefs }; persist(); emit(); }
+
+/** Switch the school currency and convert every monetary record automatically. */
+export function changeCurrency(to: string): { converted: number } {
+  const from = state.db.school.currency;
+  const t = CURRENCY_MAP[to];
+  let converted = 0;
+  if (!t || from === to) return { converted: 0 };
+  const k = t.rate / (CURRENCY_MAP[from]?.rate ?? 1);
+  mutate((db) => {
+    const conv = (v: number) => roundSmart(v * k, t.rate);
+    db.feeStructures.forEach((f) => f.items.forEach((it) => { it.amount = conv(it.amount); converted++; }));
+    db.payments.forEach((p) => { p.amount = conv(p.amount); converted++; });
+    db.expenses.forEach((e) => { e.amount = conv(e.amount); converted++; });
+    db.teachers.forEach((x) => { x.salary = conv(x.salary); converted++; });
+    db.staff.forEach((x) => { x.salary = conv(x.salary); converted++; });
+    db.routes.forEach((r) => { r.fee = conv(r.fee); converted++; });
+    db.school.currency = to;
+  });
+  return { converted };
+}
 
 export const me = (s: AppState) => (s.session ? s.db.users.find((u) => u.id === s.session!.userId) : undefined);
 
