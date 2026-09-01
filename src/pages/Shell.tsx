@@ -282,11 +282,11 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
           <button className="lg:hidden btn-g !px-2" onClick={() => setDrawer(true)} aria-label="Open menu"><Ic n="menu" /></button>
 
           {/* mobile / tablet identity — where am I? */}
-          <button onClick={() => nav("/app")} className="lg:hidden flex items-center gap-2.5 min-w-0 cursor-pointer group" aria-label={tt("Dashboard")}>
+          <button onClick={() => nav("/app")} className="lg:hidden flex items-center gap-2 min-w-0 max-w-[44vw] cursor-pointer group" aria-label={tt("Dashboard")} title={tt(sectionLabel)}>
             <span className="w-8 h-8 rounded-lg bg-ink-950 dark:bg-cobalt-600 text-gold-400 flex items-center justify-center font-display font-bold text-[14px] shrink-0 group-hover:scale-105 transition-transform">{(s.db.school.logoText || "V")[0]}</span>
-            <span className="min-w-0 text-left leading-tight">
-              <span className="block font-display font-bold text-[13.5px] truncate group-hover:text-cobalt-700 dark:group-hover:text-cobalt-300 transition-colors">{tt(sectionLabel)}</span>
-              <span className="hidden sm:block text-[10px] font-extrabold uppercase tracking-[0.1em] text-ink-400 truncate">{s.db.school.short} · {s.db.school.term}</span>
+            <span className="hidden min-[380px]:block min-w-0 text-left leading-tight">
+              <span className="block font-display font-bold text-[13px] sm:text-[13.5px] truncate group-hover:text-cobalt-700 dark:group-hover:text-cobalt-300 transition-colors">{tt(sectionLabel)}</span>
+              <span className="hidden min-[440px]:block text-[9.5px] font-extrabold uppercase tracking-[0.1em] text-ink-400 truncate">{s.db.school.short} · {s.db.school.term}</span>
             </span>
           </button>
 
@@ -345,13 +345,22 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
       </div>
 
       {/* mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 grid grid-cols-5" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} aria-label="Mobile navigation">
-        {mobileTabs.slice(0, 5).map((tb) => (
-          <button key={tb.to} onClick={() => nav(tb.to)} className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-bold transition-colors cursor-pointer ${isOn(tb.to) ? "text-cobalt-600 dark:text-cobalt-300" : "text-ink-400"}`}>
-            <Ic n={tb.icon} size={19} />{tt(tb.label)}
-            {isOn(tb.to) && <span className="w-1 h-1 rounded-full bg-gold-400" />}
-          </button>
-        ))}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-ink-100 dark:border-ink-800 bg-white/95 dark:bg-ink-900/95 backdrop-blur-md shadow-[0_-8px_24px_-12px_rgb(10_18_38/0.18)]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} aria-label="Mobile navigation">
+        <div className="grid grid-cols-5">
+          {mobileTabs.slice(0, 5).map((tb) => {
+            const on = isOn(tb.to);
+            return (
+              <button key={tb.to} onClick={() => nav(tb.to)} aria-current={on ? "page" : undefined}
+                className="relative flex flex-col items-center justify-center gap-0.5 pt-1.5 pb-1 cursor-pointer group">
+                {on && <span className="absolute top-0 inset-x-4 h-[2.5px] rounded-b-full bg-cobalt-600 dark:bg-cobalt-400" />}
+                <span className={`w-10 h-7 rounded-lg flex items-center justify-center transition-all duration-200 ${on ? "bg-cobalt-600/12 dark:bg-cobalt-400/15 text-cobalt-700 dark:text-cobalt-300 scale-105" : "text-ink-400 group-hover:text-ink-600 dark:group-hover:text-ink-200 group-active:scale-90"}`}>
+                  <Ic n={tb.icon} size={19} />
+                </span>
+                <span className={`w-full px-0.5 truncate text-center text-[9.5px] font-extrabold tracking-wide transition-colors ${on ? "text-cobalt-700 dark:text-cobalt-300" : "text-ink-400"}`}>{tt(tb.label)}</span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
       <GlobalSearch open={search} onClose={() => setSearch(false)} nav={nav} />

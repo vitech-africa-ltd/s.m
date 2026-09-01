@@ -82,6 +82,13 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
   const lang = s.prefs.lang;
   const tt = useT();
   const [priceCur, setPriceCur] = useState("USD");
+  const [navScrolled, setNavScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setNavScrolled(window.scrollY > 14);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const features: { ic: string; title: string; body: string; big?: boolean }[] = [
     { ic: "students", title: "Student Management", body: "Complete profiles, admissions workflow, ID cards, transfers, archives and parent links — every record one click away.", big: true },
@@ -102,24 +109,24 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
   return (
     <div className="min-h-screen bg-paper dark:bg-ink-950 text-ink-900 dark:text-ink-100">
       {/* nav */}
-      <header className="sticky top-0 z-40 border-b border-ink-100 dark:border-ink-800 bg-paper/85 dark:bg-ink-950/85 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-6">
-          <button onClick={() => nav("/")} className="flex items-center gap-2.5 cursor-pointer">
-            <span className="w-9 h-9 rounded-lg bg-ink-950 dark:bg-cobalt-600 flex items-center justify-center text-gold-400 font-display font-bold text-lg">V</span>
-            <span className="font-display font-bold text-[17px] tracking-tight">VITECH <span className="text-cobalt-600 dark:text-cobalt-400">School</span></span>
+      <header className={`sticky top-0 z-40 border-b transition-all duration-300 ${navScrolled ? "bg-white/95 dark:bg-ink-900/95 shadow-panel border-ink-200/70 dark:border-ink-800" : "bg-paper/85 dark:bg-ink-950/85 border-ink-100 dark:border-ink-800"} backdrop-blur`}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center gap-2 sm:gap-6">
+          <button onClick={() => nav("/")} className="flex items-center gap-2 sm:gap-2.5 min-w-0 cursor-pointer group">
+            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-ink-950 dark:bg-cobalt-600 flex items-center justify-center text-gold-400 font-display font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">V</span>
+            <span className="hidden xs:inline sm:inline font-display font-bold text-[15px] sm:text-[17px] tracking-tight truncate">VITECH <span className="text-cobalt-600 dark:text-cobalt-400">School</span></span>
           </button>
-          <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-semibold text-ink-500 dark:text-ink-300">
+          <nav className="hidden lg:flex items-center gap-6 text-[13.5px] font-semibold text-ink-500 dark:text-ink-300">
             <a href="#features" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Features")}</a>
             <a href="#roles" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Roles")}</a>
             <a href="#pricing" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Pricing")}</a>
             <a href="#security" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Security")}</a>
           </nav>
-          <div className="ml-auto flex items-center gap-2">
-            <select className="input !w-auto !h-9 !text-[12.5px] font-semibold" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            <select className="input !w-auto !h-8 sm:!h-9 !px-2 !text-[12px] font-semibold cursor-pointer" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
               {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
             </select>
-            <button className="btn-o btn-sm hidden sm:inline-flex" onClick={() => nav("/login")}>{tt("Login")}</button>
-            <button className="btn-p btn-sm" onClick={() => nav("/register")}>{tt("Get Started")}</button>
+            <button className="btn-o btn-sm hidden md:inline-flex" onClick={() => nav("/login")}>{tt("Login")}</button>
+            <button className="btn-p !h-8 sm:!h-9 !px-3 sm:!px-4 !text-[12.5px] sm:!text-sm" onClick={() => nav("/register")}>{tt("Get Started")}</button>
           </div>
         </div>
       </header>
