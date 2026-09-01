@@ -256,6 +256,28 @@ export function PrintPortal({ children }: { children: ReactNode }) {
   return createPortal(<div className="bg-white text-ink-900 print:text-black">{children}</div>, el);
 }
 
+/* On-demand printing: renders a document into #print-sheet, prints, then clears. */
+let printJob: ReactNode | null = null;
+const printSubs = new Set<() => void>();
+export const printNow = (node: ReactNode) => {
+  printJob = node;
+  printSubs.forEach((f) => f());
+  setTimeout(() => window.print(), 160);
+};
+export function PrintHost() {
+  const [job, setJob] = useState<ReactNode | null>(null);
+  useEffect(() => {
+    const f = () => setJob(printJob);
+    printSubs.add(f);
+    const clear = () => setTimeout(() => { printJob = null; setJob(null); }, 400);
+    window.addEventListener("afterprint", clear);
+    return () => { printSubs.delete(f); window.removeEventListener("afterprint", clear); };
+  }, []);
+  const el = document.getElementById("print-sheet");
+  if (!el || !job) return null;
+  return createPortal(<div className="bg-white text-ink-900 print:text-black">{job}</div>, el);
+}
+
 /* ---------- toasts ---------- */
 export type ToastMsg = { id: string; kind: "ok" | "err" | "info"; text: string };
 const tsubs = new Set<(t: ToastMsg) => void>();

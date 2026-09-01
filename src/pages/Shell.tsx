@@ -12,6 +12,7 @@ export const NAV: NavGroup[] = [
     { to: "/app", icon: "dashboard", label: "Dashboard" },
     { to: "/app/portal", icon: "user", label: "My Portal", portalOnly: true },
     { to: "/app/analytics", icon: "analytics", label: "Analytics", perm: "analytics" },
+    { to: "/app/setup", icon: "sparkles", label: "Setup wizard", perm: "settings" },
   ]},
   { title: "People", items: [
     { to: "/app/students", icon: "students", label: "Students", perm: "students" },
@@ -50,6 +51,7 @@ export const NAV: NavGroup[] = [
     { to: "/app/backups", icon: "database", label: "Backups", perm: "backups" },
     { to: "/app/settings", icon: "settings", label: "Settings", perm: "settings" },
     { to: "/app/platform", icon: "globe", label: "Platform (SaaS)", perm: "dashboard", superOnly: true },
+    { to: "/app/help", icon: "info", label: "Help & Support" },
   ]},
 ];
 
@@ -234,7 +236,19 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
       {drawer && (
         <div className="lg:hidden fixed inset-0 z-[70]">
           <div className="absolute inset-0 bg-ink-950/60 fade-in" onClick={() => setDrawer(false)} />
-          <aside className="absolute inset-y-0 left-0 w-[280px] flex flex-col side-bg shadow-pop pop-in">{SideContent}</aside>
+          <aside className="absolute inset-y-0 left-0 w-[280px] flex flex-col side-bg shadow-pop pop-in">
+            <button className="absolute top-3 right-3 z-10 w-8 h-8 rounded-lg bg-white/[0.08] text-ink-300 hover:text-white hover:bg-white/15 flex items-center justify-center cursor-pointer transition-colors" onClick={() => setDrawer(false)} aria-label="Close menu"><Ic n="x" size={16} /></button>
+            <div className="flex-1 flex flex-col min-h-0">{SideContent}</div>
+            <div className="px-4 py-3.5 border-t border-white/[0.08] flex items-center gap-2">
+              <select value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}
+                className="flex-1 h-9 rounded-lg bg-white/[0.07] border border-white/[0.1] text-[12px] font-bold text-ink-200 px-2 focus:outline-none focus:border-cobalt-500 cursor-pointer">
+                {LANGS.map((l) => <option key={l.code} value={l.code} className="bg-ink-900">{l.native}</option>)}
+              </select>
+              <button className="w-9 h-9 rounded-lg bg-white/[0.07] border border-white/[0.1] text-ink-200 flex items-center justify-center cursor-pointer hover:bg-white/15 transition-colors" onClick={() => setPrefs({ theme: s.prefs.theme === "dark" ? "light" : "dark" })} aria-label="Toggle dark mode">
+                <Ic n={s.prefs.theme === "dark" ? "sun" : "moon"} size={16} />
+              </button>
+            </div>
+          </aside>
         </div>
       )}
 
@@ -284,7 +298,7 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
       </div>
 
       {/* mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 grid grid-cols-5" aria-label="Mobile navigation">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 grid grid-cols-5" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} aria-label="Mobile navigation">
         {mobileTabs.slice(0, 5).map((tb) => (
           <button key={tb.to} onClick={() => nav(tb.to)} className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-bold transition-colors cursor-pointer ${isOn(tb.to) ? "text-cobalt-600 dark:text-cobalt-300" : "text-ink-400"}`}>
             <Ic n={tb.icon} size={19} />{tt(tb.label)}

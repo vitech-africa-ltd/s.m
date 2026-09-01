@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useApp, mutate, audit, notify, logComm, uid, todayISO, fmtMoney, fmtDate, monthKeys, monthLabel, feeTotal, paidBy, classOf, type Payment } from "../lib/data";
 import { Ic } from "../components/icons";
-import { Modal, Confirm, Field, Chip, Avatar, Pagination, toast, PrintPortal, DuoBars, HBars } from "../components/ui";
+import { Modal, Confirm, Field, Chip, Avatar, Pagination, toast, PrintPortal, DuoBars, HBars, printNow } from "../components/ui";
 import { PageHead } from "./Dashboard";
 
 /* ============ Receipt document ============ */
@@ -394,7 +394,45 @@ export function FinReportsPage() {
     <div>
       <PageHead title="Financial reports" sub={`Revenue, expenses and collections — ${db.school.academicYear}.`}>
         <button className="btn-o btn-sm" onClick={() => exportCSV("revenue_by_month.csv", mk.map((m, i) => ({ label: m, value: revBy[i] })))}><Ic n="download" size={15} />CSV</button>
-        <button className="btn-o btn-sm" onClick={() => window.print()}><Ic n="printer" size={15} />Print report</button>
+        <button className="btn-o btn-sm" onClick={() => printNow(
+          <div className="p-2 max-w-[760px] mx-auto">
+            <div className="flex items-end justify-between border-b-4 border-ink-950 pb-3 mb-5">
+              <div>
+                <div className="font-display font-bold text-[22px]">{db.school.name}</div>
+                <div className="text-[11px] uppercase tracking-[0.18em] text-ink-500">Financial report — {db.school.academicYear}</div>
+              </div>
+              <div className="text-right text-[11px] text-ink-500">Currency: {cur}<br />Generated {fmtDate(todayISO())}</div>
+            </div>
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              {[["Total revenue", revBy.reduce((a, b) => a + b, 0)], ["Total expenses", expBy.reduce((a, b) => a + b, 0)], ["Net position", revBy.reduce((a, b) => a + b, 0) - expBy.reduce((a, b) => a + b, 0)]].map(([k, v]) => (
+                <div key={k as string} className="border border-ink-200 rounded-lg p-3 text-center">
+                  <div className="text-[9px] font-extrabold uppercase tracking-widest text-ink-400">{k}</div>
+                  <div className="font-display font-bold text-[16px] mt-1">{fmtMoney(v as number, cur)}</div>
+                </div>
+              ))}
+            </div>
+            <table className="w-full border-collapse text-[12px] mb-5">
+              <thead><tr><th className="border border-ink-300 bg-ink-100 px-2 py-1.5 text-left">Month</th><th className="border border-ink-300 bg-ink-100 px-2 py-1.5 text-right">Revenue</th><th className="border border-ink-300 bg-ink-100 px-2 py-1.5 text-right">Expenses</th><th className="border border-ink-300 bg-ink-100 px-2 py-1.5 text-right">Net</th></tr></thead>
+              <tbody>{mk.map((m, i) => (
+                <tr key={m}>
+                  <td className="border border-ink-300 px-2 py-1.5 font-semibold">{monthLabel(m)} {m.slice(0, 4)}</td>
+                  <td className="border border-ink-300 px-2 py-1.5 text-right">{fmtMoney(revBy[i], cur)}</td>
+                  <td className="border border-ink-300 px-2 py-1.5 text-right">{fmtMoney(expBy[i], cur)}</td>
+                  <td className={`border border-ink-300 px-2 py-1.5 text-right font-bold ${revBy[i] - expBy[i] < 0 ? "text-rose-600" : ""}`}>{fmtMoney(revBy[i] - expBy[i], cur)}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+            <div className="grid grid-cols-2 gap-5">
+              <div><div className="text-[10px] font-extrabold uppercase tracking-widest text-ink-400 mb-2">Revenue by payment method</div>
+                {byMethod.map((r) => <div key={r.label} className="flex justify-between py-1 border-b border-ink-100 text-[11.5px]"><span>{r.label}</span><b>{fmtMoney(r.value, cur)}</b></div>)}
+              </div>
+              <div><div className="text-[10px] font-extrabold uppercase tracking-widest text-ink-400 mb-2">Revenue by class</div>
+                {byClass.map((r) => <div key={r.label} className="flex justify-between py-1 border-b border-ink-100 text-[11.5px]"><span>{r.label}</span><b>{fmtMoney(r.value, cur)}</b></div>)}
+              </div>
+            </div>
+            <p className="text-[10px] text-ink-400 mt-5">Prepared by the Finance office · {db.school.name} · VITECH School Management System</p>
+          </div>
+        )}><Ic n="printer" size={15} />Print report</button>
       </PageHead>
       <div className="grid lg:grid-cols-2 gap-4 mb-4">
         <div className="panel">

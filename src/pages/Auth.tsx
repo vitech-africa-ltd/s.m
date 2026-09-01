@@ -125,7 +125,7 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
 
   const create = () => {
     mutate((db) => {
-      db.school.name = name || "My New Academy"; db.school.country = country; db.school.currency = currency;
+      db.school.name = name || "My New Academy"; db.school.country = country; db.school.currency = currency; db.school.onboarded = false;
       db.school.timezone = c.tz; db.school.phone = phone; db.school.email = emailS; db.school.academicYear = year;
       db.tenants.unshift({ id: uid(), name: name || "My New Academy", city: country, plan: "Professional", students: 0, status: "trial", mrr: 0, joined: todayISO() });
       db.users.push({ id: uid(), name: adminName || "School Admin", email: adminEmail || "admin@myschool.edu", pass: pass || "demo1234", role: "admin", twoFA: false, hue: 210 });

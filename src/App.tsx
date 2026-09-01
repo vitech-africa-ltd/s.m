@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useApp, setSession, me, can, audit, setPrefs } from "./lib/data";
 import { Ic } from "./components/icons";
-import { Toaster, toast } from "./components/ui";
+import { Toaster, toast, PrintHost } from "./components/ui";
+import HelpPage from "./pages/Help";
+import SetupPage from "./pages/Setup";
 import Landing from "./pages/Landing";
 import { Login, Register, Forgot } from "./pages/Auth";
 import Shell from "./pages/Shell";
@@ -85,7 +87,7 @@ export default function App() {
     "/app/communication": "communication", "/app/announcements": "communication", "/app/library": "library",
     "/app/transport": "transport", "/app/documents": "documents", "/app/certificates": "certificates",
     "/app/idcards": "idcards", "/app/audit": "audit", "/app/backups": "backups", "/app/analytics": "analytics",
-    "/app/settings": "settings",
+    "/app/settings": "settings", "/app/help": "dashboard", "/app/setup": "settings",
   };
   if (path.startsWith("/app") && path !== "/app") {
     const perm = needsPerm[path];
@@ -128,6 +130,8 @@ export default function App() {
       case "/app/analytics": return <AnalyticsPage />;
       case "/app/platform": return user.role === "super" ? <PlatformPage /> : <ErrorPage code="403" title="Super Admin only" body="The platform control panel is reserved for the SaaS owner." nav={nav} />;
       case "/app/settings": return <SettingsPage />;
+      case "/app/help": return <HelpPage />;
+      case "/app/setup": return user.role === "super" || user.role === "admin" ? <SetupPage nav={nav} /> : <ErrorPage code="403" title="Administrators only" body="The setup wizard is reserved for school administrators." nav={nav} />;
       default: return <ErrorPage code="404" title="Page not found" body="The page you are looking for doesn't exist or was moved." nav={nav} />;
     }
   })();
@@ -141,6 +145,7 @@ export default function App() {
   return (
     <>
       <Shell nav={nav} path={path} onLogout={logout}>{page}</Shell>
+      <PrintHost />
       <Toaster />
     </>
   );

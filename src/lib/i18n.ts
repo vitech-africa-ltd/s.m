@@ -13,6 +13,7 @@ const fr: Dict = {
   "Invoices": "Factures", "Expenses": "Dépenses", "Financial Reports": "Rapports financiers", "Communication": "Communication", "Announcements": "Annonces", "Calendar": "Calendrier",
   "Library": "Bibliothèque", "Transport": "Transport", "Documents": "Documents", "Certificates": "Certificats", "ID cards": "Cartes d'identité", "Audit logs": "Journaux d'audit",
   "Backups": "Sauvegardes", "Analytics": "Analytique", "Settings": "Paramètres", "Platform (SaaS)": "Plateforme (SaaS)", "My Portal": "Mon portail", "Reports": "Rapports",
+  "Help & Support": "Aide & Support", "Setup wizard": "Assistant de configuration", "Help & Support page": "Page Aide & Support",
   "Search anything…": "Rechercher étudiants, paiements, reçus…", "Notifications": "Notifications", "Sign out": "Déconnexion", "Mark all read": "Tout marquer comme lu", "Language": "Langue",
   /* dashboard */
   "Good morning": "Bonjour", "Good afternoon": "Bon après-midi", "Here's what's happening at": "Voici l'activité de", "today": "aujourd'hui",

@@ -12,6 +12,7 @@ export interface SchoolSettings {
   name: string; short: string; logoText: string; motto: string; address: string; phone: string; email: string; website: string;
   country: string; currency: string; timezone: string; dateFormat: string; academicYear: string; term: string; terms: string[];
   brandColor: string; receiptPrefix: string; regPrefix: string; grading: GradeScale[]; passMark: number;
+  onboarded?: boolean;
 }
 export interface Campus { id: string; name: string; city: string; active: boolean; }
 export interface Student {
@@ -463,7 +464,7 @@ function seed(): DB {
       name: "VITECH International Academy", short: "VIA", logoText: "VITECH", motto: "Knowledge · Discipline · Excellence",
       address: "KG 7 Ave, Kacyiru, Kigali, Rwanda", phone: "+250 788 000 111", email: "info@vitech.academy", website: "www.vitech.academy",
       country: "Rwanda", currency: "RWF", timezone: "Africa/Kigali", dateFormat: "DD/MM/YYYY", academicYear: "2025–2026", term: "Term 2",
-      terms: ["Term 1", "Term 2", "Term 3"], brandColor: "#1e49c9", receiptPrefix: "RC", regPrefix: "VA",
+      terms: ["Term 1", "Term 2", "Term 3"], brandColor: "#1e49c9", receiptPrefix: "RC", regPrefix: "VA", onboarded: true,
       grading: [
         { grade: "A", min: 80, label: "Excellent" }, { grade: "B", min: 70, label: "Very Good" }, { grade: "C", min: 60, label: "Good" },
         { grade: "D", min: 50, label: "Pass" }, { grade: "E", min: 40, label: "Weak" }, { grade: "F", min: 0, label: "Fail" },

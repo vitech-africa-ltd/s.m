@@ -49,6 +49,16 @@ export default function Dashboard({ nav }: { nav: (to: string) => void }) {
 
   return (
     <div>
+      {db.school.onboarded === false && (
+        <div className="panel mb-5 p-4 flex flex-wrap items-center gap-3.5 !border-gold-300 dark:!border-gold-700 bg-gold-50/60 dark:bg-gold-500/[0.06]">
+          <span className="w-10 h-10 rounded-xl bg-gold-400 text-ink-950 flex items-center justify-center shrink-0"><Ic n="sparkles" size={18} /></span>
+          <div className="min-w-[200px] flex-1">
+            <b className="block font-display text-[15px]">Finish setting up {db.school.name}</b>
+            <span className="text-[12.5px] text-ink-500 dark:text-ink-300">Run the 8-step wizard to configure classes, subjects, teachers, students and fees.</span>
+          </div>
+          <button className="btn-gold btn-sm" onClick={() => nav("/app/setup")}>{tt("Setup wizard")}<Ic n="chevR" size={14} /></button>
+        </div>
+      )}
       <div className="relative overflow-hidden panel !rounded-2xl p-6 mb-5 bg-ink-950 !text-ink-100 !border-ink-800">
         <div className="absolute inset-0 grid-bg opacity-60" />
         <div className="relative flex flex-wrap items-center gap-4">

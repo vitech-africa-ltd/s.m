@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useApp, mutate, setAtt, attStatus, audit, notify, logComm, todayISO, lastSchoolDays, attPct, fmtDate, fmtDateShort } from "../lib/data";
 import { Ic } from "../components/icons";
-import { Chip, Avatar, toast, Donut } from "../components/ui";
+import { Chip, Avatar, toast, Donut, printNow } from "../components/ui";
 import { PageHead } from "./Dashboard";
 
 const STS = [
@@ -52,6 +52,43 @@ export default function AttendancePage() {
   return (
     <div>
       <PageHead title="Attendance" sub="Mark daily registers — parents are alerted automatically on absence.">
+        {tab === "students" && (
+          <button className="btn-o btn-sm" onClick={() => {
+            const c = db.classes.find((x) => x.id === cls);
+            printNow(
+              <div className="p-2 max-w-[760px] mx-auto">
+                <div className="flex items-end justify-between border-b-4 border-ink-950 pb-3 mb-4">
+                  <div>
+                    <div className="font-display font-bold text-[22px]">{db.school.name}</div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-ink-500">Attendance register — {c?.name} {c?.section}</div>
+                  </div>
+                  <div className="text-right text-[11px] text-ink-500">{fmtDate(date)}<br />{db.school.academicYear} · {db.school.term}</div>
+                </div>
+                <table className="w-full border-collapse text-[12px]">
+                  <thead><tr><th className="border border-ink-300 bg-ink-100 px-2 py-1.5 text-left w-10">#</th><th className="border border-ink-300 bg-ink-100 px-2 py-1.5 text-left">Student</th><th className="border border-ink-300 bg-ink-100 px-2 py-1.5 text-left">Reg No</th><th className="border border-ink-300 bg-ink-100 px-2 py-1.5 text-center">Status</th></tr></thead>
+                  <tbody>
+                    {students.map((x, i) => {
+                      const st = dirty[x.id] ?? attStatus(db, date, x.id);
+                      const label = st === "P" ? "Present" : st === "A" ? "Absent" : st === "L" ? "Late" : "Excused";
+                      return (
+                        <tr key={x.id}>
+                          <td className="border border-ink-300 px-2 py-1.5 text-ink-400">{i + 1}</td>
+                          <td className="border border-ink-300 px-2 py-1.5 font-semibold">{x.first} {x.last}</td>
+                          <td className="border border-ink-300 px-2 py-1.5 font-mono text-[10.5px]">{x.regNo}</td>
+                          <td className={`border border-ink-300 px-2 py-1.5 text-center font-bold ${st === "A" ? "text-rose-600" : st === "L" ? "text-amber-600" : "text-emerald-700"}`}>{label}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="flex gap-4 mt-4 text-[11px] font-bold">
+                  <span>Present: {counts.P}</span><span>Absent: {counts.A}</span><span>Late: {counts.L}</span><span>Excused: {counts.E}</span>
+                  <span className="ml-auto text-ink-400 font-semibold">Class teacher signature: ______________________</span>
+                </div>
+              </div>
+            );
+          }}><Ic n="printer" size={15} />Print register</button>
+        )}
         <button className="btn-o btn-sm" onClick={() => markAll("P")}><Ic n="check" size={15} />Mark all present</button>
         <button className="btn-p btn-sm" onClick={save} disabled={!Object.keys(dirty).length}><Ic n="check" size={15} />Save register{Object.keys(dirty).length ? ` (${Object.keys(dirty).length})` : ""}</button>
       </PageHead>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useApp, mutate, audit, notify, uid, todayISO, fmtDate, fmtMoney, fmtNum, monthKeys, monthLabel, attPct, collectionRate, type Plan } from "../lib/data";
 import { Ic } from "../components/icons";
-import { Modal, Field, Chip, Avatar, Empty, toast, AreaChart, Donut, HBars, PrintPortal, Ring } from "../components/ui";
+import { Modal, Field, Chip, Avatar, Empty, toast, AreaChart, Donut, HBars, PrintPortal, Ring, printNow } from "../components/ui";
 import { PageHead } from "./Dashboard";
 import { useCountUp } from "../components/ui";
 
@@ -266,6 +266,31 @@ export function CertificatesPage() {
               <span className="font-mono text-[12px] font-bold text-cobalt-600 dark:text-cobalt-300">{c.code}</span>
               <span className="text-[11.5px] text-ink-400 font-semibold">{fmtDate(c.date)}</span>
             </div>
+            <div className="flex gap-1.5 mt-3">
+              <button className="btn-o btn-sm flex-1" onClick={() => printNow(
+                <div className="max-w-[720px] mx-auto p-8">
+                  <div className="border-[3px] border-ink-950 p-1.5">
+                    <div className="border border-gold-500 px-10 py-12 text-center relative">
+                      <div className="absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 border-gold-500" /><div className="absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 border-gold-500" />
+                      <div className="absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 border-gold-500" /><div className="absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 border-gold-500" />
+                      <div className="flex items-center justify-center gap-3"><span className="w-10 h-10 rounded-lg bg-ink-950 text-gold-400 flex items-center justify-center font-display font-bold">{db.school.logoText[0]}</span><span className="font-display font-bold text-[15px] uppercase tracking-[0.2em]">{db.school.name}</span></div>
+                      <div className="text-[11px] uppercase tracking-[0.3em] text-ink-400 mt-6">This is to certify that</div>
+                      <div className="font-display font-bold text-[34px] mt-2">{c.recipient}</div>
+                      <div className="text-[12px] text-ink-500 mt-3 max-w-md mx-auto">has been awarded the</div>
+                      <div className="font-display font-bold text-[22px] text-cobalt-800 mt-1">{c.type}</div>
+                      {c.note && <div className="text-[12px] text-ink-500 mt-2">{c.note}</div>}
+                      <div className="flex items-end justify-between mt-10 px-4">
+                        <div className="text-center"><div className="border-t border-ink-400 pt-1.5 text-[10px] font-bold uppercase tracking-wide text-ink-400 w-36">Principal</div></div>
+                        <div className="text-center"><div className="font-display font-bold text-[13px]">{fmtDate(c.date)}</div><div className="text-[10px] font-bold uppercase tracking-wide text-ink-400 mt-1">Date</div></div>
+                        <div className="text-center"><div className="border-t border-ink-400 pt-1.5 text-[10px] font-bold uppercase tracking-wide text-ink-400 w-36">Registrar</div></div>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 mt-6 text-[10px] font-mono font-bold text-ink-400">Verify: {db.school.website}/#/verify · Code {c.code}</div>
+                    </div>
+                  </div>
+                </div>
+              )}><Ic n="printer" size={13} />Print</button>
+              <button className="btn-g btn-sm !px-2.5" onClick={() => { mutate((db) => { const x = db.certificates.find((y) => y.id === c.id)!; x.valid = !x.valid; }); audit("REVOKE_CERTIFICATE", "Certificate", `${c.code} ${c.valid ? "revoked" : "restored"}`); toast(c.valid ? "Certificate revoked" : "Certificate restored", "info"); }} aria-label="Toggle validity"><Ic n="shield" size={13} /></button>
+            </div>
           </div>
         ))}
       </div>
@@ -448,16 +473,21 @@ export function AnalyticsPage() {
   const s = useApp();
   const db = s.db;
   const cur = db.school.currency;
-  const mk = monthKeys(8);
+  const [period, setPeriod] = useState(3);
+  const spans = [1, 1, 2, 4, 8, 8];
+  const mkAll = monthKeys(8);
+  const mk = mkAll.slice(-spans[period]);
   const enroll = mk.map((m) => db.students.filter((x) => x.admitted.startsWith(m)).length);
-  const attSeries = mk.map((_, i) => 88 + ((i * 7) % 9));
   const revBy = mk.map((m) => db.payments.filter((p) => p.date.startsWith(m)).reduce((a, b) => a + b.amount, 0));
+  const revTotal = revBy.reduce((a, b) => a + b, 0);
   const passRate = useMemo(() => { const gs = db.grades; return Math.round((gs.filter((g) => g.score >= db.school.passMark).length / Math.max(1, gs.length)) * 100); }, [db]);
   const BigStat = ({ label, value }: { label: string; value: string }) => { const n = parseFloat(value.replace(/[^\d.]/g, "")) || 0; const v = useCountUp(n); return <div className="panel p-5 text-center"><div className="font-display text-[30px] font-bold tnum">{value.includes("%") ? `${Math.round(v)}%` : fmtNum(Math.round(v))}</div><div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400 mt-1">{label}</div></div>; };
   return (
     <div>
-      <PageHead title="Analytics" sub="Enrollment, attendance, collection and academic success — with period filters." />
-      <div className="flex gap-1.5 flex-wrap mb-4">{["Today", "This week", "This month", "This term", "This year", "Custom…"].map((p, i) => <button key={p} className={`chip cursor-pointer !py-2 !px-3.5 ${i === 3 ? "bg-cobalt-600 text-white" : "bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-300 hover:bg-cobalt-100"}`}>{p}</button>)}</div>
+      <PageHead title="Analytics" sub="Enrollment, attendance, collection and academic success — with period filters.">
+        <Chip tone="blue" className="!py-2">Revenue in period: <b className="tnum">{fmtMoney(revTotal, cur)}</b></Chip>
+      </PageHead>
+      <div className="flex gap-1.5 flex-wrap mb-4">{["Today", "This week", "This month", "This term", "This year", "Custom…"].map((p, i) => <button key={p} onClick={() => { setPeriod(i); toast(`Period: ${p}`, "info"); }} className={`chip cursor-pointer !py-2 !px-3.5 transition-all ${period === i ? "bg-cobalt-600 text-white scale-105" : "bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-300 hover:bg-cobalt-100"}`}>{p}</button>)}</div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-4">
         <BigStat label="Enrollment growth" value={`${Math.round(((db.students.length - 200) / 200) * 100)}%`} />
         <BigStat label="Attendance rate" value={`${attPct(db, todayISO())}%`} />
@@ -465,8 +495,8 @@ export function AnalyticsPage() {
         <BigStat label="Academic success" value={`${passRate}%`} />
       </div>
       <div className="grid lg:grid-cols-2 gap-4 mb-4">
-        <div className="panel"><div className="panel-h"><h3 className="font-display font-bold text-[16px]">Enrollment growth</h3><Chip tone="blue">admissions / month</Chip></div><div className="px-5 pb-5"><AreaChart data={enroll.map((x) => x || 1)} labels={mk.map(monthLabel)} h={120} id="an1" /></div></div>
-        <div className="panel"><div className="panel-h"><h3 className="font-display font-bold text-[16px]">Monthly revenue</h3><Chip tone="green">{cur}</Chip></div><div className="px-5 pb-5"><AreaChart data={revBy} labels={mk.map(monthLabel)} h={120} color="#c98f1b" id="an2" /></div></div>
+        <div className="panel"><div className="panel-h"><h3 className="font-display font-bold text-[16px]">Enrollment growth</h3><Chip tone="blue">admissions / month</Chip></div><div className="px-5 pb-5"><AreaChart key={`e${period}`} data={enroll.map((x) => x || 1)} labels={mk.map(monthLabel)} h={120} id="an1" /></div></div>
+        <div className="panel"><div className="panel-h"><h3 className="font-display font-bold text-[16px]">Monthly revenue</h3><Chip tone="green">{cur}</Chip></div><div className="px-5 pb-5"><AreaChart key={`r${period}`} data={revBy} labels={mk.map(monthLabel)} h={120} color="#c98f1b" id="an2" /></div></div>
       </div>
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="panel p-5"><h3 className="font-display font-bold text-[16px] mb-4">Performance distribution</h3>
