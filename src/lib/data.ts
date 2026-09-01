@@ -51,6 +51,8 @@ export interface Audit { id: string; user: string; role: string; action: string;
 export interface Backup { id: string; date: string; size: string; type: "auto" | "manual"; status: "ok"; }
 export interface Plan { id: string; name: string; price: number; period: string; students: number | "Unlimited"; teachers: number | "Unlimited"; storage: string; sms: number | "Unlimited"; features: string[]; highlight?: boolean; }
 export interface TenantSchool { id: string; name: string; city: string; plan: string; students: number; status: "active" | "trial" | "suspended"; mrr: number; joined: string; }
+export interface UpdateEntry { id: string; from: string; to: string; date: string; size: string; status: "ok" | "rolled-back"; }
+export interface SystemInfo { version: string; channel: "stable" | "beta"; autoUpdate: boolean; available: string | null; history: UpdateEntry[]; }
 
 export interface DB {
   v: number; school: SchoolSettings; campuses: Campus[]; users: User[]; rolePerms: Record<string, string[]>;
@@ -60,6 +62,7 @@ export interface DB {
   templates: MsgTemplate[]; commLogs: CommLog[]; notifications: Notice[]; events: SchoolEvent[]; books: Book[];
   loans: Loan[]; vehicles: Vehicle[]; routes: RouteT[]; staff: Staff[]; leaves: Leave[]; documents: Doc[];
   certificates: Certificate[]; audits: Audit[]; backups: Backup[]; plans: Plan[]; tenants: TenantSchool[];
+  system: SystemInfo;
 }
 export interface AppState { db: DB; session: { userId: string } | null; prefs: { theme: "light" | "dark"; lang: Lang }; }
 
@@ -478,6 +481,14 @@ function seed(): DB {
     users, rolePerms: PERMS, students, admissions, teachers, classes, subjects, timetable, attendanceOverrides: {},
     exams, grades, feeStructures, payments, expenses, announcements, templates, commLogs, notifications, events,
     books, loans, vehicles, routes, staff, leaves, documents, certificates, audits, backups, plans, tenants,
+    system: {
+      version: "3.2.0", channel: "stable", autoUpdate: true, available: "3.3.0",
+      history: [
+        { id: uid(), from: "3.1.2", to: "3.2.0", date: daysAgo(21), size: "4.6 MB", status: "ok" },
+        { id: uid(), from: "3.1.0", to: "3.1.2", date: daysAgo(48), size: "2.1 MB", status: "ok" },
+        { id: uid(), from: "3.0.0", to: "3.1.0", date: daysAgo(75), size: "6.3 MB", status: "ok" },
+      ],
+    },
   };
 }
 
@@ -491,6 +502,8 @@ function load(): AppState {
       if (s?.db?.v === 3) {
         /* normalize legacy language choices (rw/sw were removed) */
         if (!LANG_CODES.includes(s.prefs?.lang)) s.prefs = { theme: s.prefs?.theme === "dark" ? "dark" : "light", lang: "en" };
+        /* migrate older saves without the system-update module */
+        if (!s.db.system) s.db.system = { version: "3.2.0", channel: "stable", autoUpdate: true, available: "3.3.0", history: [] };
         return s;
       }
     }
