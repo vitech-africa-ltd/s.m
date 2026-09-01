@@ -14,6 +14,8 @@ export interface SchoolSettings {
   country: string; currency: string; timezone: string; dateFormat: string; academicYear: string; term: string; terms: string[];
   brandColor: string; receiptPrefix: string; regPrefix: string; grading: GradeScale[]; passMark: number;
   onboarded?: boolean;
+  fxUpdatedAt?: string;
+  lastFx?: { from: string; to: string; rate: number; date: string; converted: number } | null;
 }
 export interface Campus { id: string; name: string; city: string; active: boolean; }
 export interface Student {
@@ -469,6 +471,7 @@ function seed(): DB {
       address: "KG 7 Ave, Kacyiru, Kigali, Rwanda", phone: "+250 788 000 111", email: "info@vitech.academy", website: "www.vitech.academy",
       country: "Rwanda", currency: "RWF", timezone: "Africa/Kigali", dateFormat: "DD/MM/YYYY", academicYear: "2025–2026", term: "Term 2",
       terms: ["Term 1", "Term 2", "Term 3"], brandColor: "#1e49c9", receiptPrefix: "RC", regPrefix: "VA", onboarded: true,
+      fxUpdatedAt: daysAgo(1), lastFx: null,
       grading: [
         { grade: "A", min: 80, label: "Excellent" }, { grade: "B", min: 70, label: "Very Good" }, { grade: "C", min: 60, label: "Good" },
         { grade: "D", min: 50, label: "Pass" }, { grade: "E", min: 40, label: "Weak" }, { grade: "F", min: 0, label: "Fail" },
@@ -524,24 +527,38 @@ export const setSession = (s: AppState["session"]) => { state = { ...state, sess
 export const setPrefs = (p: Partial<AppState["prefs"]>) => { state = { ...state, prefs: { ...state.prefs, ...p } }; persist(); emit(); };
 export function resetDemo() { state = { db: seed(), session: state.session, prefs: state.prefs }; persist(); emit(); }
 
+export type RoundingMode = "smart" | "exact" | "hundred";
+/** Round a converted amount according to the chosen policy and the target currency's scale. */
+export const roundBy = (v: number, mode: RoundingMode, rate: number) =>
+  mode === "exact" ? Math.round(v * 100) / 100
+    : mode === "hundred" ? Math.round(v / 100) * 100
+      : roundSmart(v, rate);
+
+export interface FxResult { converted: number; rate: number; from: string; to: string; breakdown: Record<string, number>; }
 /** Switch the school currency and convert every monetary record automatically. */
-export function changeCurrency(to: string): { converted: number } {
+export function changeCurrency(to: string, opts?: { rate?: number; rounding?: RoundingMode }): FxResult {
   const from = state.db.school.currency;
   const t = CURRENCY_MAP[to];
-  let converted = 0;
-  if (!t || from === to) return { converted: 0 };
-  const k = t.rate / (CURRENCY_MAP[from]?.rate ?? 1);
+  const res: FxResult = { converted: 0, rate: 0, from, to, breakdown: {} };
+  if (!t || from === to) return res;
+  const standard = t.rate / (CURRENCY_MAP[from]?.rate ?? 1);
+  const k = opts?.rate && opts.rate > 0 ? opts.rate : standard;
+  res.rate = k;
+  const mode = opts?.rounding ?? "smart";
   mutate((db) => {
-    const conv = (v: number) => roundSmart(v * k, t.rate);
-    db.feeStructures.forEach((f) => f.items.forEach((it) => { it.amount = conv(it.amount); converted++; }));
-    db.payments.forEach((p) => { p.amount = conv(p.amount); converted++; });
-    db.expenses.forEach((e) => { e.amount = conv(e.amount); converted++; });
-    db.teachers.forEach((x) => { x.salary = conv(x.salary); converted++; });
-    db.staff.forEach((x) => { x.salary = conv(x.salary); converted++; });
-    db.routes.forEach((r) => { r.fee = conv(r.fee); converted++; });
+    const conv = (v: number) => roundBy(v * k, mode, t.rate);
+    const bump = (cat: string) => { res.breakdown[cat] = (res.breakdown[cat] ?? 0) + 1; res.converted++; };
+    db.feeStructures.forEach((f) => f.items.forEach((it) => { it.amount = conv(it.amount); bump("Fee structures"); }));
+    db.payments.forEach((p) => { p.amount = conv(p.amount); bump("Payments"); });
+    db.expenses.forEach((e) => { e.amount = conv(e.amount); bump("Expenses"); });
+    db.teachers.forEach((x) => { x.salary = conv(x.salary); bump("Teacher salaries"); });
+    db.staff.forEach((x) => { x.salary = conv(x.salary); bump("Staff salaries"); });
+    db.routes.forEach((r) => { r.fee = conv(r.fee); bump("Transport fees"); });
+    db.school.lastFx = { from, to, rate: k, date: todayISO(), converted: res.converted };
+    db.school.fxUpdatedAt = todayISO();
     db.school.currency = to;
   });
-  return { converted };
+  return res;
 }
 
 export const me = (s: AppState) => (s.session ? s.db.users.find((u) => u.id === s.session!.userId) : undefined);

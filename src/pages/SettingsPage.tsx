@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useApp, mutate, audit, resetDemo, COUNTRIES, CURRENCIES, CURRENCY_MAP, changeCurrency, fxRateLabel, fmtMoney, fmtMoneyConv, feeTotal, type GradeScale } from "../lib/data";
+import { useApp, mutate, audit, resetDemo, COUNTRIES, CURRENCIES, CURRENCY_MAP, changeCurrency, fxRateLabel, fmtMoney, fmtMoneyConv, feeTotal, roundBy, todayISO, uid, fmtDate, me, paidBy, classOf, type GradeScale, type RoundingMode } from "../lib/data";
 import { Ic } from "../components/icons";
 import { Field, Chip, toast, Confirm, Modal } from "../components/ui";
 import { PageHead } from "./Dashboard";
@@ -15,6 +15,9 @@ export default function SettingsPage() {
   const [curTarget, setCurTarget] = useState<string | null>(null);
   const [convAmt, setConvAmt] = useState("150000");
   const [convTo, setConvTo] = useState("USD");
+  const [spinning, setSpinning] = useState(false);
+  const [curRate, setCurRate] = useState("");
+  const [curRound, setCurRound] = useState<RoundingMode>("smart");
   const savedCur = db.school.currency;
   const savedDef = CURRENCY_MAP[savedCur];
   const curAmount = parseFloat(convAmt) || 0;
@@ -30,6 +33,36 @@ export default function SettingsPage() {
     setSchool((p) => ({ ...p, country: c, currency: inf?.currency ?? p.currency, timezone: inf?.tz ?? p.timezone, phone: inf?.phone ?? p.phone }));
     if (inf) toast(`Country set — currency ${inf.currency}, timezone ${inf.tz}`, "info");
   };
+  const stdRate = (to: string) => (CURRENCY_MAP[to]?.rate ?? 1) / (CURRENCY_MAP[savedCur]?.rate ?? 1);
+  const openTarget = (code: string) => { setCurTarget(code); setCurRate(String(+stdRate(code).toPrecision(6))); setCurRound("smart"); };
+  const refreshRates = () => {
+    setSpinning(true);
+    setTimeout(() => { mutate((db) => { db.school.fxUpdatedAt = todayISO(); }); setSpinning(false); toast("Exchange rates refreshed"); }, 800);
+  };
+  const revertFx = () => {
+    const lf = db.school.lastFx; if (!lf) return;
+    const res = changeCurrency(lf.from);
+    audit("CHANGE_CURRENCY", "Finance", `Reverted ${lf.to} → ${lf.from} · ${res.converted} records reconverted`);
+    setSchool((p) => ({ ...p, currency: lf.from }));
+    toast(`Currency reverted to ${lf.from} — ${res.converted.toLocaleString()} records reconverted`);
+  };
+  const planBreakdown: [string, number][] = [
+    ["Fee structures", db.feeStructures.reduce((a, f) => a + f.items.length, 0)],
+    ["Payments", db.payments.length], ["Expenses", db.expenses.length],
+    ["Teacher salaries", db.teachers.length], ["Staff salaries", db.staff.length], ["Transport fees", db.routes.length],
+  ];
+  const monthRev = db.payments.filter((p) => p.date.startsWith(todayISO().slice(0, 7))).reduce((a, b) => a + b.amount, 0);
+  const outstanding = db.students.filter((x) => x.status === "active").reduce((a, x) => a + Math.max(0, feeTotal(db, classOf(db, x)?.level ?? 1) - paidBy(db, x.id)), 0);
+  const ROUNDS: { id: RoundingMode; label: string; hint: string }[] = [
+    { id: "smart", label: "Smart", hint: "Nearest 100 / 10 / cent by currency scale — recommended" },
+    { id: "exact", label: "Exact", hint: "Keep precise amounts, 2 decimals" },
+    { id: "hundred", label: "Nearest 100", hint: "Round every amount to hundreds" },
+  ];
+  const aggRate = parseFloat(curRate) || (curTarget ? stdRate(curTarget) : 1);
+  const agg = (v: number) => curTarget ? fmtMoney(roundBy(v * aggRate, curRound, CURRENCY_MAP[curTarget]?.rate ?? 1), curTarget) : "";
+  const ticker = ["RWF", "KES", "UGX", "TZS", "CDF", "NGN", "ZAR", "XAF", "EUR", "GBP"].map((code, i) => ({
+    code, val: CURRENCY_MAP[code]?.rate ?? 1, up: i % 3 !== 1,
+  }));
   const tabs = [["school", "School", "building"], ["academic", "Academic", "teacher"], ["finance", "Finance", "coins"], ["comm", "Communication", "comm"], ["brand", "Branding", "sparkles"], ["campus", "Campuses", "globe"], ["system", "System", "settings"]] as const;
 
   return (
@@ -103,11 +136,30 @@ export default function SettingsPage() {
       )}
 
       {tab === "finance" && (
-        <div className="grid lg:grid-cols-2 gap-4 max-w-5xl">
+        <div className="max-w-5xl">
+          {/* live FX ticker */}
+          <div className="panel !shadow-none overflow-hidden mb-4 flex items-stretch">
+            <span className="shrink-0 px-3.5 flex items-center gap-1.5 bg-ink-950 dark:bg-cobalt-600 text-gold-400 text-[10px] font-extrabold uppercase tracking-[0.16em]"><Ic n="coins" size={12} />Live FX</span>
+            <div className="overflow-hidden flex-1">
+              <div className="marquee flex gap-9 w-max whitespace-nowrap py-2.5 text-[12px] font-bold">
+                {[...ticker, ...ticker].map((tk, i) => (
+                  <span key={i} className="flex items-center gap-1.5">
+                    <span className="text-ink-400 font-extrabold">USD/{tk.code}</span>
+                    <span className="tnum">{tk.val >= 100 ? Math.round(tk.val).toLocaleString("en-US") : tk.val.toFixed(2)}</span>
+                    <span className={tk.up ? "text-emerald-500" : "text-rose-500"}>{tk.up ? "▲" : "▼"}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="grid lg:grid-cols-2 gap-4">
           <div className="panel p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 gap-2">
               <h3 className="font-display font-bold text-[16px]">Currency & exchange rate</h3>
-              <Chip tone="green"><i className="w-1.5 h-1.5 rounded-full bg-emerald-500 tick-pulse" />Auto-conversion</Chip>
+              <div className="flex items-center gap-2">
+                <button className="btn-g btn-sm" onClick={refreshRates} title="Refresh exchange rates"><Ic n="refresh" size={14} className={spinning ? "animate-spin" : ""} />Refresh</button>
+                <Chip tone="green"><i className="w-1.5 h-1.5 rounded-full bg-emerald-500 tick-pulse" />Auto-conversion</Chip>
+              </div>
             </div>
             <div className="rounded-xl bg-ink-950 text-white p-5 flex items-center gap-4">
               <span className="w-14 h-14 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center font-display font-bold text-gold-400 text-[17px] shrink-0">{savedDef?.symbol.trim()}</span>
@@ -117,17 +169,31 @@ export default function SettingsPage() {
               </div>
               <button className="btn-gold btn-sm ml-auto shrink-0" onClick={() => { setCurPick(true); setCurTarget(null); setCurSearch(""); }}><Ic n="swap" size={14} />Change</button>
             </div>
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <div className="rounded-lg border border-ink-100 dark:border-ink-800 px-4 py-3">
-                <div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-400">Base rate</div>
-                <div className="font-display font-bold text-[15px] tnum mt-0.5">{fxRateLabel("USD", savedCur)}</div>
+            <div className="grid grid-cols-3 gap-2.5 mt-4">
+              <div className="rounded-lg border border-ink-100 dark:border-ink-800 px-3 py-2.5">
+                <div className="text-[9.5px] font-extrabold uppercase tracking-[0.1em] text-ink-400">Base rate</div>
+                <div className="font-display font-bold text-[12.5px] tnum mt-0.5">{fxRateLabel("USD", savedCur)}</div>
               </div>
-              <div className="rounded-lg border border-ink-100 dark:border-ink-800 px-4 py-3">
-                <div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-400">Inverse</div>
-                <div className="font-display font-bold text-[15px] tnum mt-0.5">{fxRateLabel(savedCur, "USD")}</div>
+              <div className="rounded-lg border border-ink-100 dark:border-ink-800 px-3 py-2.5">
+                <div className="text-[9.5px] font-extrabold uppercase tracking-[0.1em] text-ink-400">Inverse</div>
+                <div className="font-display font-bold text-[12.5px] tnum mt-0.5">{fxRateLabel(savedCur, "USD")}</div>
+              </div>
+              <div className="rounded-lg border border-ink-100 dark:border-ink-800 px-3 py-2.5">
+                <div className="text-[9.5px] font-extrabold uppercase tracking-[0.1em] text-ink-400">Updated</div>
+                <div className="font-display font-bold text-[12.5px] tnum mt-0.5 flex items-center gap-1.5"><i className="w-1.5 h-1.5 rounded-full bg-emerald-500 tick-pulse" />{fmtDate(db.school.fxUpdatedAt ?? todayISO())}</div>
               </div>
             </div>
-            <p className="text-[12.5px] text-ink-400 leading-relaxed mt-4">When the currency changes, <b className="text-ink-600 dark:text-ink-200">{recCount.toLocaleString()} monetary records</b> — fee structures, payments, expenses, salaries and transport fees — are converted automatically at the exchange rate. Nothing is lost or left in the old currency.</p>
+            {db.school.lastFx && (
+              <div className="rounded-lg border border-cobalt-200 dark:border-cobalt-800 bg-cobalt-50/60 dark:bg-cobalt-500/10 px-4 py-3 mt-4 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-cobalt-600 text-white flex items-center justify-center shrink-0"><Ic n="swap" size={15} /></span>
+                <div className="min-w-0 flex-1 text-[12.5px]">
+                  <b className="block">Last conversion — {db.school.lastFx.from} → {db.school.lastFx.to}</b>
+                  <span className="text-ink-500 dark:text-ink-300">{fmtDate(db.school.lastFx.date)} · {db.school.lastFx.converted.toLocaleString()} records · rate 1 {db.school.lastFx.from} = {db.school.lastFx.rate.toPrecision(4)} {db.school.lastFx.to}</span>
+                </div>
+                <button className="btn-o btn-sm shrink-0" onClick={revertFx}><Ic n="refresh" size={13} />Revert</button>
+              </div>
+            )}
+            <p className="text-[12.5px] text-ink-400 leading-relaxed mt-4">When the currency changes, <b className="text-ink-600 dark:text-ink-200">{recCount.toLocaleString()} monetary records</b> — fee structures, payments, expenses, salaries and transport fees — are converted at the exchange rate you confirm. A conversion report is archived in Documents and the change is reversible.</p>
           </div>
           <div className="panel p-6">
             <h3 className="font-display font-bold text-[16px] mb-4">Live converter</h3>
@@ -164,6 +230,7 @@ export default function SettingsPage() {
               ))}
             </div>
             <p className="text-[12px] text-ink-400 font-semibold mt-3">Gateway APIs (MTN MoMo, Airtel Money, Stripe, bank APIs) plug into the same payment pipeline.</p>
+          </div>
           </div>
         </div>
       )}
@@ -256,16 +323,18 @@ export default function SettingsPage() {
       )}
       {/* ---- Currency picker & conversion ---- */}
       <Modal open={curPick} onClose={() => { setCurPick(false); setCurTarget(null); }}
-        title={curTarget ? `Switch currency to ${curTarget}` : "Select currency"} w={curTarget ? "max-w-md" : "max-w-xl"}
+        title={curTarget ? `Conversion plan — ${savedCur} → ${curTarget}` : "Select currency"} w={curTarget ? "max-w-2xl" : "max-w-xl"}
         footer={curTarget ? (
           <>
             <button className="btn-o" onClick={() => setCurTarget(null)}><Ic n="chevL" size={14} />Back</button>
             <button className="btn-p" onClick={() => {
-              const from = savedCur;
-              const res = changeCurrency(curTarget);
-              audit("CHANGE_CURRENCY", "Finance", `${from} → ${curTarget} · ${res.converted} monetary records converted at ${fxRateLabel(from, curTarget)}`);
+              const rate = parseFloat(curRate);
+              if (!rate || rate <= 0) { toast("Enter a valid exchange rate", "err"); return; }
+              const res = changeCurrency(curTarget, { rate, rounding: curRound });
+              audit("CHANGE_CURRENCY", "Finance", `${res.from} → ${res.to} · ${res.converted} records · rate 1 ${res.from} = ${rate} ${res.to} · ${curRound} rounding`);
+              mutate((db) => db.documents.unshift({ id: uid(), name: `Currency conversion ${res.from} → ${res.to} — ${res.converted} records.pdf`, category: "Financial documents", size: "0.4 MB", date: todayISO(), by: me(s)?.name ?? "System", kind: "pdf" }));
               setSchool((p) => ({ ...p, currency: curTarget }));
-              toast(`${res.converted.toLocaleString()} amounts converted ${from} → ${curTarget}`);
+              toast(`${res.converted.toLocaleString()} amounts converted ${res.from} → ${curTarget} — report archived in Documents`);
               setCurPick(false); setCurTarget(null);
             }}><Ic n="refresh" size={15} />Convert {recCount.toLocaleString()} records</button>
           </>
@@ -280,7 +349,7 @@ export default function SettingsPage() {
               {CURRENCIES.filter((c) => `${c.code} ${c.name} ${c.symbol}`.toLowerCase().includes(curSearch.toLowerCase())).map((c) => {
                 const current = c.code === savedCur;
                 return (
-                  <button key={c.code} onClick={() => (current ? setCurPick(false) : setCurTarget(c.code))}
+                  <button key={c.code} onClick={() => (current ? setCurPick(false) : openTarget(c.code))}
                     className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all cursor-pointer hover:-translate-y-0.5 ${current ? "border-emerald-400 dark:border-emerald-600 bg-emerald-50/60 dark:bg-emerald-500/10" : "border-ink-100 dark:border-ink-800 hover:border-cobalt-300 dark:hover:border-cobalt-700 hover:shadow-panel"}`}>
                     <span className="text-[19px] leading-none">{c.flag}</span>
                     <span className="min-w-0 flex-1">
@@ -297,27 +366,70 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div>
-            <div className="rounded-xl bg-ink-50 dark:bg-ink-950/60 border border-ink-100 dark:border-ink-800 p-5 text-center">
+            <div className="rounded-xl bg-ink-50 dark:bg-ink-950/60 border border-ink-100 dark:border-ink-800 p-4 text-center">
               <div className="flex items-center justify-center gap-4">
-                <span className="font-display font-bold text-[22px]">{CURRENCY_MAP[savedCur]?.flag} {savedCur}</span>
-                <span className="w-10 h-10 rounded-full bg-cobalt-600 text-white flex items-center justify-center"><Ic n="chevR" size={18} /></span>
-                <span className="font-display font-bold text-[22px]">{CURRENCY_MAP[curTarget]?.flag} {curTarget}</span>
+                <span className="font-display font-bold text-[20px]">{CURRENCY_MAP[savedCur]?.flag} {savedCur}</span>
+                <span className="w-9 h-9 rounded-full bg-cobalt-600 text-white flex items-center justify-center"><Ic n="chevR" size={16} /></span>
+                <span className="font-display font-bold text-[20px]">{CURRENCY_MAP[curTarget]?.flag} {curTarget}</span>
               </div>
-              <div className="chip bg-gold-100 text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 mx-auto mt-3 !py-1.5 font-mono">{fxRateLabel(savedCur, curTarget)}</div>
             </div>
-            <div className="space-y-2 mt-4 text-[13px]">
-              {[
-                ["Senior 4 tuition", feeTotal(db, 4)],
-                ["Sample payment", db.payments[0]?.amount ?? 0],
-                ["Average teacher salary", Math.round(db.teachers.reduce((a, b) => a + b.salary, 0) / Math.max(1, db.teachers.length))],
-              ].map(([label, v]) => (
-                <div key={label as string} className="flex items-center justify-between rounded-lg border border-ink-100 dark:border-ink-800 px-3.5 py-2.5">
-                  <span className="font-semibold text-ink-500 dark:text-ink-300">{label}</span>
-                  <span className="font-bold tnum"><span className="text-ink-400 line-through decoration-rose-400/70 mr-2">{fmtMoney(v as number, savedCur)}</span>{fmtMoneyConv(v as number, savedCur, curTarget)}</span>
+            {/* rate editor */}
+            <div className="rounded-xl border border-ink-100 dark:border-ink-800 p-4 mt-3.5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-ink-400">Exchange rate</span>
+                <button className="text-[12px] font-bold text-cobalt-600 dark:text-cobalt-300 hover:underline cursor-pointer" onClick={() => curTarget && setCurRate(String(+stdRate(curTarget).toPrecision(6)))}>Use standard rate</button>
+              </div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="chip bg-ink-100 dark:bg-ink-800 text-ink-600 dark:text-ink-200 !py-1.5">1 {savedCur}</span>
+                <span className="text-ink-300 font-bold">=</span>
+                <input type="number" step="any" min="0" className="input !w-36 !text-center font-bold tnum" value={curRate} onChange={(e) => setCurRate(e.target.value)} aria-label="Exchange rate" />
+                <span className="chip bg-ink-100 dark:bg-ink-800 text-ink-600 dark:text-ink-200 !py-1.5">{curTarget}</span>
+                <span className="text-[11.5px] text-ink-400 font-semibold ml-auto">Standard: {curTarget ? fxRateLabel(savedCur, curTarget) : "—"}</span>
+              </div>
+            </div>
+            {/* rounding policy */}
+            <div className="mt-3.5">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-ink-400 block mb-2">Rounding policy</span>
+              <div className="grid sm:grid-cols-3 gap-2">
+                {ROUNDS.map((r) => (
+                  <button key={r.id} onClick={() => setCurRound(r.id)}
+                    className={`rounded-xl border-2 px-3 py-2.5 text-left transition-all cursor-pointer ${curRound === r.id ? "border-cobalt-500 bg-cobalt-50 dark:bg-cobalt-500/10" : "border-ink-100 dark:border-ink-800 hover:border-cobalt-300"}`}>
+                    <span className="flex items-center gap-1.5"><span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${curRound === r.id ? "border-cobalt-600" : "border-ink-300"}`}>{curRound === r.id && <i className="w-1.5 h-1.5 rounded-full bg-cobalt-600" />}</span><b className="text-[13px]">{r.label}</b></span>
+                    <span className="block text-[10.5px] text-ink-400 mt-1 leading-snug">{r.hint}</span>
+                    {curTarget && <span className="block text-[11px] font-bold tnum text-cobalt-700 dark:text-cobalt-300 mt-1.5">e.g. {agg(feeTotal(db, 4))}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* breakdown + aggregates */}
+            <div className="grid sm:grid-cols-2 gap-3 mt-3.5">
+              <div className="rounded-xl border border-ink-100 dark:border-ink-800 p-3.5">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-ink-400">Records to convert</span>
+                <div className="mt-2 space-y-1.5">
+                  {planBreakdown.map(([label, n]) => (
+                    <div key={label} className="flex items-center justify-between text-[12.5px]">
+                      <span className="font-semibold text-ink-500 dark:text-ink-300">{label}</span>
+                      <b className="tnum">{n.toLocaleString()}</b>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between text-[12.5px] pt-1.5 border-t border-ink-100 dark:border-ink-800">
+                    <span className="font-extrabold">Total</span><b className="tnum text-cobalt-700 dark:text-cobalt-300">{recCount.toLocaleString()}</b>
+                  </div>
                 </div>
-              ))}
+              </div>
+              <div className="rounded-xl border border-ink-100 dark:border-ink-800 p-3.5">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-ink-400">Key amounts — before / after</span>
+                <div className="mt-2 space-y-1.5">
+                  {([["Senior 4 tuition", feeTotal(db, 4)], ["Revenue this month", monthRev], ["Outstanding balance", outstanding]] as [string, number][]).map(([label, v]) => (
+                    <div key={label} className="text-[12.5px]">
+                      <span className="font-semibold text-ink-500 dark:text-ink-300 block">{label}</span>
+                      <span className="font-bold tnum"><span className="text-ink-400 line-through decoration-rose-400/70 mr-2">{fmtMoney(v, savedCur)}</span>{agg(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <p className="text-[12px] text-ink-400 leading-relaxed mt-3.5 flex gap-2"><Ic n="shield" size={14} className="text-emerald-500 shrink-0 mt-0.5" />All {recCount.toLocaleString()} fee items, payments, expenses, salaries and transport fees will be converted. The change is recorded in the audit log.</p>
+            <p className="text-[12px] text-ink-400 leading-relaxed mt-3.5 flex gap-2"><Ic n="shield" size={14} className="text-emerald-500 shrink-0 mt-0.5" />The conversion is logged to the audit trail, a report is archived in Documents, and you can revert from Finance settings afterwards.</p>
           </div>
         )}
       </Modal>
