@@ -18,6 +18,7 @@ import CommunicationPage, { AnnouncementsPage } from "./pages/Communication";
 import CalendarPage from "./pages/CalendarPage";
 import SettingsPage from "./pages/SettingsPage";
 import { LibraryPage, TransportPage, HRPage, DocumentsPage, CertificatesPage, VerifyPage, IDCardsPage, AuditPage, BackupsPage, AnalyticsPage, PlatformPage } from "./pages/More";
+import DownloadPage from "./pages/Download";
 import { StudentPortal, ParentPortal, TeacherPortal } from "./pages/Portals";
 
 const useHash = () => {
@@ -75,6 +76,7 @@ export default function App() {
   if (path === "/forgot") return <><Forgot nav={nav} /><Toaster /></>;
   if (path === "/reset") return <><Forgot nav={nav} reset /><Toaster /></>;
   if (path === "/verify") return <><VerifyPage nav={nav} /><Toaster /></>;
+  if (path === "/download") return <><DownloadPage nav={nav} /><Toaster /></>;
 
   if (!user) return <><Login nav={nav} onDone={() => nav("/app")} /><Toaster /></>;
 

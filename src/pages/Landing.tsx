@@ -120,6 +120,9 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
             <a href="#roles" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Roles")}</a>
             <a href="#pricing" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Pricing")}</a>
             <a href="#security" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Security")}</a>
+            <button onClick={() => nav("/download")} className="flex items-center gap-1.5 font-bold text-cobalt-700 dark:text-cobalt-300 hover:text-gold-600 dark:hover:text-gold-300 transition-colors cursor-pointer">
+              <Ic n="download" size={15} />{tt("Desktop app")}
+            </button>
           </nav>
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             <select className="input !w-auto !h-8 sm:!h-9 !px-2 !text-[12px] font-semibold cursor-pointer" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
