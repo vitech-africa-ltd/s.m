@@ -33,12 +33,13 @@ export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () =
   const locked = Date.now() < lockUntil;
   const [, force] = useState(0);
 
-  const submit = () => {
-    if (locked) return;
+  const submit = (em?: string, pw?: string) => {
+    if (locked && !em) return;
     setBusy(true); setErr("");
+    const e2 = (em ?? email).trim().toLowerCase(); const p2 = pw ?? pass;
     setTimeout(() => {
-      const u = s.db.users.find((x) => x.email.toLowerCase() === email.trim().toLowerCase());
-      if (!u || u.pass !== pass) {
+      const u = s.db.users.find((x) => x.email.toLowerCase() === e2);
+      if (!u || u.pass !== p2) {
         const f = fails + 1; setFails(f);
         if (f >= 5) { setLockUntil(Date.now() + 30000); setFails(0); toast("Too many attempts — account locked for 30s", "err"); audit("LOGIN_LOCKED", "Auth", `5 failed attempts for ${email}`); }
         else { setErr(`Invalid credentials. ${5 - f} attempts remaining.`); toast("Invalid email or password", "err"); }
@@ -95,8 +96,8 @@ export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () =
         <div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400 mb-3 flex items-center gap-2"><Ic n="zap" size={13} className="text-gold-500" />{tt("Demo accounts — password")} <code className="kbd">demo1234</code></div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {s.db.users.slice(0, 9).map((u) => (
-            <button key={u.id} onClick={() => { setEmail(u.email); setPass("demo1234"); setStep("creds"); setErr(""); }}
-              className="text-left rounded-lg border border-ink-100 dark:border-ink-800 px-3 py-2 hover:border-cobalt-400 hover:bg-cobalt-50 dark:hover:bg-cobalt-500/10 transition-colors cursor-pointer">
+            <button key={u.id} onClick={() => { setEmail(u.email); setPass("demo1234"); setStep("creds"); setErr(""); submit(u.email, "demo1234"); }}
+              className="text-left rounded-lg border border-ink-100 dark:border-ink-800 px-3 py-2 hover:border-cobalt-400 hover:bg-cobalt-50 dark:hover:bg-cobalt-500/10 transition-colors cursor-pointer active:scale-[0.98]">
               <span className="block text-[12.5px] font-bold truncate">{ROLE_LABEL[u.role]}</span>
               <span className="block text-[11px] text-ink-400 truncate">{u.email}</span>
             </button>

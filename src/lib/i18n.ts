@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { useApp, LANG_CODES, type Lang } from "./data";
+import { mtGet, onMT, requestMT } from "./mt";
 
 /* Keys are the English source strings — any untranslated key renders in English. */
 type Dict = Record<string, string>;
@@ -88,6 +90,20 @@ const fr: Dict = {
   "Active": "Actif", "Inactive": "Inactif", "Pending": "En attente", "Approved": "Approuvé", "Rejected": "Rejeté", "Paid": "Payé",
   "Overdue": "En retard", "Scheduled": "Programmé", "Completed": "Terminé", "Valid": "Valide", "New student": "Nouvel étudiant",
   "Showing": "Affichage", "of": "sur", "Welcome back": "Bon retour",
+  /* portals */
+  "Term grade": "Note du trimestre", "Average %": "Moyenne %", "My attendance": "Ma présence", "Last 15 school days": "15 derniers jours d'école",
+  "Class average today": "Moyenne de la classe aujourd'hui", "Fees status": "Situation des frais", "Annual fees": "Frais annuels",
+  "Balance": "Solde", "Fully paid — well done!": "Tout est payé — bravo !", "Next exam": "Prochain examen", "days away": "jours restants",
+  "My results": "Mes résultats", "My timetable": "Mon emploi du temps", "Room": "Salle", "Subject": "Matière",
+  "Mark": "Note", "Time": "Heure", "No children linked to this account": "Aucun enfant lié à ce compte",
+  "Your children's progress, attendance and fees at a glance.": "Les progrès, la présence et les frais de vos enfants en un coup d'œil.",
+  "Class teacher": "Titulaire", "Average": "Moyenne", "Grade": "Note", "Fees & balance": "Frais & solde", "Please clear": "Merci de régler",
+  "No balance — thank you!": "Aucun solde — merci !", "Latest results": "Derniers résultats", "School announcements": "Annonces de l'école",
+  "You receive absence alerts, payment confirmations and exam reminders on WhatsApp & SMS.": "Vous recevez les alertes d'absence, confirmations de paiement et rappels d'examens sur WhatsApp & SMS.",
+  "You can access only your assigned classes.": "Vous n'accédez qu'à vos classes attribuées.", "Take attendance": "Faire l'appel",
+  "Enter grades": "Saisir les notes", "My classes": "Mes classes", "My students": "Mes étudiants", "Periods / week": "Périodes / semaine",
+  "Section": "Section", "Today's schedule": "Emploi du temps du jour", "No periods today — enjoy the free day.": "Aucun cours aujourd'hui — bonne journée.",
+  "Announcements for staff": "Annonces pour le personnel",
 };
 
 const es: Dict = {
@@ -354,9 +370,26 @@ const normalize = (lang: string): Lang => (LANG_CODES.includes(lang as Lang) ? (
 /** Translate a source string; unknown keys fall back to English. */
 export const t = (lang: Lang, key: string) => dicts[normalize(lang)]?.[key] ?? key;
 
-/** Bound translator for components — re-renders on language change. */
+/**
+ * Bound translator for components.
+ * Resolution order: curated dictionary → AI machine-translation cache → English source.
+ * Missing strings are queued for AI translation and the component re-renders
+ * automatically once the translation arrives (and is cached for next time).
+ */
 export function useT() {
   const s = useApp();
   const lang = normalize(s.prefs.lang as string);
-  return (key: string) => dicts[lang]?.[key] ?? key;
+  const mtEnabled = s.prefs.mt !== false;
+  const [, bump] = useState(0);
+  useEffect(() => onMT(() => bump((x) => x + 1)), []);
+  return (key: string) => {
+    const direct = dicts[lang]?.[key];
+    if (direct !== undefined) return direct;
+    if (mtEnabled && lang !== "en") {
+      const cached = mtGet(lang, key);
+      if (cached) return cached;
+      requestMT(lang, key);
+    }
+    return key;
+  };
 }

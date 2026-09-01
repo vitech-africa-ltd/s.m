@@ -66,7 +66,7 @@ export interface DB {
   certificates: Certificate[]; audits: Audit[]; backups: Backup[]; plans: Plan[]; tenants: TenantSchool[];
   system: SystemInfo;
 }
-export interface AppState { db: DB; session: { userId: string } | null; prefs: { theme: "light" | "dark"; lang: Lang }; }
+export interface AppState { db: DB; session: { userId: string } | null; prefs: { theme: "light" | "dark"; lang: Lang; mt?: boolean }; }
 
 /* ============================== Utils ============================== */
 export const uid = () => Math.random().toString(36).slice(2, 10);
