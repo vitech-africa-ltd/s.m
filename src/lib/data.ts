@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from "react";
 
 /* ============================== Types ============================== */
-export type Lang = "en" | "fr" | "rw" | "sw";
+export type Lang = "en" | "fr" | "es" | "pt" | "ar";
+export const LANG_CODES: Lang[] = ["en", "fr", "es", "pt", "ar"];
 export type Role =
   | "super" | "admin" | "principal" | "accountant" | "teacher" | "student"
   | "parent" | "registrar" | "reception" | "librarian" | "transport" | "hr";
@@ -69,7 +70,7 @@ export const hashStr = (s: string) => { let h = 2166136261; for (let i = 0; i < 
 export const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 export const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 export const daysAhead = (n: number) => daysAgo(-n);
-const LOCALES: Record<string, string> = { en: "en-GB", fr: "fr-FR", rw: "rw-RW", sw: "sw-KE" };
+const LOCALES: Record<string, string> = { en: "en-GB", fr: "fr-FR", es: "es-ES", pt: "pt-PT", ar: "ar" };
 export const uiLocale = () => LOCALES[(state as AppState | null)?.prefs.lang ?? "en"] ?? "en-GB";
 const dOf = (iso: string) => new Date(iso.includes("T") || iso.includes(" ") ? iso : iso + "T12:00:00");
 export const fmtDate = (iso: string) => dOf(iso).toLocaleDateString(uiLocale(), { day: "2-digit", month: "short", year: "numeric" });
@@ -485,7 +486,14 @@ const LS_KEY = "vitech-sms-v3";
 function load(): AppState {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (raw) { const s = JSON.parse(raw); if (s?.db?.v === 3) return s; }
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s?.db?.v === 3) {
+        /* normalize legacy language choices (rw/sw were removed) */
+        if (!LANG_CODES.includes(s.prefs?.lang)) s.prefs = { theme: s.prefs?.theme === "dark" ? "dark" : "light", lang: "en" };
+        return s;
+      }
+    }
   } catch { /* corrupted → reseed */ }
   return { db: seed(), session: null, prefs: { theme: "light", lang: "en" } };
 }
