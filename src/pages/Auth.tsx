@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useApp, setSession, mutate, audit, uid, todayISO, COUNTRIES, CURRENCIES, CURRENCY_MAP, fxRateLabel, getState, type User, type Role } from "../lib/data";
 import { Ic } from "../components/icons";
 import { toast, Field } from "../components/ui";
+import { useT } from "../lib/i18n";
 
 const ROLE_LABEL: Record<Role, string> = { super: "Super Admin", admin: "School Admin", principal: "Principal", accountant: "Accountant", teacher: "Teacher", student: "Student", parent: "Parent", registrar: "Registrar", reception: "Reception", librarian: "Librarian", transport: "Transport", hr: "HR" };
 
@@ -19,6 +20,7 @@ function Brand({ nav }: { nav: (to: string) => void }) {
 
 export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () => void }) {
   const s = useApp();
+  const tt = useT();
   const [email, setEmail] = useState("admin@vitech.academy");
   const [pass, setPass] = useState("demo1234");
   const [step, setStep] = useState<"creds" | "2fa">("creds");
@@ -49,7 +51,7 @@ export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () =
   const finish = (u: User) => {
     mutate((db) => { const x = db.users.find((y) => y.id === u.id)!; x.lastLogin = todayISO(); db.audits.unshift({ id: uid(), user: u.name, role: u.role, action: "LOGIN_SUCCESS", entity: "Auth", detail: `${u.email} signed in (session created)`, date: `${todayISO()} ${new Date().toTimeString().slice(0, 5)}`, ip: "197.243.44.18", device: "Chrome · Web" }); });
     setSession({ userId: u.id });
-    toast(`Welcome back, ${u.name.split(" ")[0]}`);
+    toast(`${tt("Welcome back")}, ${u.name.split(" ")[0]}`);
     onDone();
   };
   const verify2fa = () => {
@@ -62,18 +64,18 @@ export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () =
       <div className="panel p-6 sm:p-7 fade-in">
         {step === "creds" ? (
           <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="space-y-4">
-            <Field label="Email address"><input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@school.edu" required /></Field>
-            <Field label="Password">
+            <Field label={tt("Email address")}><input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@school.edu" required /></Field>
+            <Field label={tt("Password")}>
               <div className="relative"><input className="input pr-10" type="password" value={pass} onChange={(e) => setPass(e.target.value)} required />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300"><Ic n="lock" size={16} /></span></div>
             </Field>
             {err && <p className="text-[12.5px] font-bold text-rose-600 flex items-center gap-1.5"><Ic n="alert" size={14} />{err}</p>}
-            {locked && <p className="text-[12.5px] font-bold text-amber-600 flex items-center gap-1.5"><Ic n="clock" size={14} />Account locked — try again in 30 seconds.</p>}
+            {locked && <p className="text-[12.5px] font-bold text-amber-600 flex items-center gap-1.5"><Ic n="clock" size={14} />{tt("Account locked — try again in 30 seconds.")}</p>}
             <div className="flex items-center justify-between text-[13px] font-semibold">
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" defaultChecked className="accent-cobalt-600 w-4 h-4" />Remember me</label>
-              <button type="button" className="text-cobalt-600 dark:text-cobalt-400 hover:underline cursor-pointer" onClick={() => nav("/forgot")}>Forgot password?</button>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" defaultChecked className="accent-cobalt-600 w-4 h-4" />{tt("Remember me")}</label>
+              <button type="button" className="text-cobalt-600 dark:text-cobalt-400 hover:underline cursor-pointer" onClick={() => nav("/forgot")}>{tt("Forgot password?")}</button>
             </div>
-            <button className="btn-p w-full" disabled={busy || locked} onClick={() => force(1)} type="submit">{busy ? "Verifying…" : "Sign in"}<Ic n="arrowUR" size={15} /></button>
+            <button className="btn-p w-full" disabled={busy || locked} onClick={() => force(1)} type="submit">{busy ? tt("Verifying…") : tt("Sign in")}<Ic n="arrowUR" size={15} /></button>
           </form>
         ) : (
           <form onSubmit={(e) => { e.preventDefault(); verify2fa(); }} className="space-y-4">
@@ -81,16 +83,16 @@ export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () =
               <Ic n="shield" className="text-cobalt-600 dark:text-cobalt-300" />
               <p className="text-[13px] font-semibold text-cobalt-800 dark:text-cobalt-200">Two-factor authentication required for administrators. Demo code: <b>123456</b></p>
             </div>
-            <Field label="6-digit code"><input className="input text-center font-display text-2xl tracking-[0.5em]" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="••••••" autoFocus /></Field>
+            <Field label={tt("6-digit code")}><input className="input text-center font-display text-2xl tracking-[0.5em]" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="••••••" autoFocus /></Field>
             {err && <p className="text-[12.5px] font-bold text-rose-600">{err}</p>}
-            <button className="btn-p w-full" type="submit">Verify & continue</button>
-            <button type="button" className="btn-g w-full" onClick={() => setStep("creds")}><Ic n="chevL" size={15} />Back</button>
+            <button className="btn-p w-full" type="submit">{tt("Verify & continue")}</button>
+            <button type="button" className="btn-g w-full" onClick={() => setStep("creds")}><Ic n="chevL" size={15} />{tt("Back")}</button>
           </form>
         )}
       </div>
 
       <div className="panel p-5 mt-4">
-        <div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400 mb-3 flex items-center gap-2"><Ic n="zap" size={13} className="text-gold-500" />Demo accounts — password <code className="kbd">demo1234</code></div>
+        <div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400 mb-3 flex items-center gap-2"><Ic n="zap" size={13} className="text-gold-500" />{tt("Demo accounts — password")} <code className="kbd">demo1234</code></div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {s.db.users.slice(0, 9).map((u) => (
             <button key={u.id} onClick={() => { setEmail(u.email); setPass("demo1234"); setStep("creds"); setErr(""); }}
@@ -106,6 +108,7 @@ export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () =
 }
 
 export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: () => void }) {
+  const tt = useT();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [country, setCountry] = useState("Rwanda");
@@ -143,7 +146,7 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
             <div key={st} className="flex items-center gap-1 flex-1 last:flex-none">
               <div className="flex flex-col items-center gap-1">
                 <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[12.5px] font-bold border-2 transition-colors ${i < step ? "bg-emerald-500 border-emerald-500 text-white" : i === step ? "bg-cobalt-600 border-cobalt-600 text-white" : "border-ink-200 dark:border-ink-700 text-ink-400"}`}>{i < step ? <Ic n="check" size={14} sw={2.6} /> : i + 1}</span>
-                <span className={`text-[10px] font-bold uppercase tracking-wide hidden sm:block ${i === step ? "text-cobalt-600 dark:text-cobalt-300" : "text-ink-400"}`}>{st}</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wide hidden sm:block ${i === step ? "text-cobalt-600 dark:text-cobalt-300" : "text-ink-400"}`}>{tt(st)}</span>
               </div>
               {i < steps.length - 1 && <div className={`h-0.5 flex-1 rounded mb-4 ${i < step ? "bg-emerald-500" : "bg-ink-100 dark:bg-ink-800"}`} />}
             </div>
@@ -152,20 +155,20 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
 
         {step === 0 && (
           <div className="space-y-4 fade-in">
-            <Field label="School name"><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Hilltop International Academy" /></Field>
-            <Field label="Admin full name"><input className="input" value={adminName} onChange={(e) => setAdminName(e.target.value)} placeholder="Jane Doe" /></Field>
-            <Field label="Admin email"><input className="input" type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} placeholder="admin@school.edu" /></Field>
-            <Field label="Password"><input className="input" type="password" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="Min. 8 characters" /></Field>
+            <Field label={tt("School name")}><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Hilltop International Academy" /></Field>
+            <Field label={tt("Admin full name")}><input className="input" value={adminName} onChange={(e) => setAdminName(e.target.value)} placeholder="Jane Doe" /></Field>
+            <Field label={tt("Admin email")}><input className="input" type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} placeholder="admin@school.edu" /></Field>
+            <Field label={tt("Password")}><input className="input" type="password" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="Min. 8 characters" /></Field>
             <div className="grid sm:grid-cols-2 gap-4">
-              <Field label="Country">
+              <Field label={tt("Country")}>
                 <select className="input" value={country} onChange={(e) => { const cc = e.target.value; setCountry(cc); const inf = COUNTRIES[cc]; if (inf) { setPhone(inf.phone); setCurrency(inf.currency); toast(`Currency ${inf.currency} · ${inf.tz} auto-configured`, "info"); } }}>
                   {Object.keys(COUNTRIES).map((k) => <option key={k}>{k}</option>)}
                 </select>
               </Field>
-              <Field label="Phone"><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
+              <Field label={tt("Phone")}><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
             </div>
             <div className="rounded-xl bg-ink-50 dark:bg-ink-950/60 border border-ink-100 dark:border-ink-800 px-4 py-3.5 flex flex-wrap items-center gap-3">
-              <span className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-500 dark:text-ink-300"><Ic n="globe" size={15} className="text-cobalt-600 dark:text-cobalt-300" />Auto-detected:</span>
+              <span className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-500 dark:text-ink-300"><Ic n="globe" size={15} className="text-cobalt-600 dark:text-cobalt-300" />{tt("Auto-detected:")}</span>
               <span className="chip bg-cobalt-100 text-cobalt-700 dark:bg-cobalt-500/15 dark:text-cobalt-300">{CURRENCY_MAP[currency]?.flag} {currency} — {CURRENCY_MAP[currency]?.symbol}</span>
               <span className="chip bg-gold-100 text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 font-mono !text-[10.5px]">{fxRateLabel("USD", currency)}</span>
               <span className="chip bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-300">{c.tz}</span>
@@ -187,7 +190,7 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
         )}
         {step === 2 && (
           <div className="fade-in">
-            <span className="label">Which levels does your school run?</span>
+            <span className="label">{tt("Which levels does your school run?")}</span>
             <div className="grid grid-cols-3 gap-2.5">
               {[1, 2, 3, 4, 5, 6].map((l) => (
                 <button key={l} onClick={() => setLevels((p) => p.includes(l) ? p.filter((x) => x !== l) : [...p, l])}
@@ -210,9 +213,9 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
         )}
 
         <div className="flex justify-between mt-7">
-          <button className="btn-o" onClick={() => (step === 0 ? nav("/") : setStep(step - 1))}><Ic n="chevL" size={15} />Back</button>
-          {step < 3 ? <button className="btn-p" onClick={() => setStep(step + 1)}>Continue<Ic n="chevR" size={15} /></button>
-            : <button className="btn-p" onClick={create}><Ic n="zap" size={15} />Launch my school</button>}
+          <button className="btn-o" onClick={() => (step === 0 ? nav("/") : setStep(step - 1))}><Ic n="chevL" size={15} />{tt("Back")}</button>
+          {step < 3 ? <button className="btn-p" onClick={() => setStep(step + 1)}>{tt("Continue")}<Ic n="chevR" size={15} /></button>
+            : <button className="btn-p" onClick={create}><Ic n="zap" size={15} />{tt("Launch my school")}</button>}
         </div>
       </div>
     </Shell>
@@ -220,6 +223,7 @@ export function Register({ nav, onDone }: { nav: (to: string) => void; onDone: (
 }
 
 export function Forgot({ nav, reset }: { nav: (to: string) => void; reset?: boolean }) {
+  const tt = useT();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [p1, setP1] = useState("");
@@ -231,23 +235,23 @@ export function Forgot({ nav, reset }: { nav: (to: string) => void; reset?: bool
           sent ? (
             <div className="text-center py-4 fade-in">
               <span className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 flex items-center justify-center mx-auto"><Ic n="mail" size={24} /></span>
-              <h3 className="font-display font-bold text-[19px] mt-4">Check your inbox</h3>
+              <h3 className="font-display font-bold text-[19px] mt-4">{tt("Check your inbox")}</h3>
               <p className="text-[13.5px] text-ink-400 mt-1.5">If <b>{email}</b> exists, a reset link is on its way. It expires in 30 minutes.</p>
-              <button className="btn-p mt-5" onClick={() => nav("/reset")}>Open reset link (demo)</button>
+              <button className="btn-p mt-5" onClick={() => nav("/reset")}>{tt("Open reset link (demo)")}</button>
             </div>
           ) : (
             <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setSent(true); toast("Reset link sent", "info"); }}>
-              <Field label="Email address"><input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@school.edu" /></Field>
-              <button className="btn-p w-full" type="submit"><Ic n="send" size={15} />Send reset link</button>
-              <button type="button" className="btn-g w-full" onClick={() => nav("/login")}><Ic n="chevL" size={15} />Back to login</button>
+              <Field label={tt("Email address")}><input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@school.edu" /></Field>
+              <button className="btn-p w-full" type="submit"><Ic n="send" size={15} />{tt("Send reset link")}</button>
+              <button type="button" className="btn-g w-full" onClick={() => nav("/login")}><Ic n="chevL" size={15} />{tt("Back to login")}</button>
             </form>
           )
         ) : (
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if (p1.length < 8 || p1 !== p2) { toast("Passwords must match (min 8 chars)", "err"); return; } toast("Password updated — sign in"); nav("/login"); }}>
-            <Field label="New password"><input className="input" type="password" required value={p1} onChange={(e) => setP1(e.target.value)} /></Field>
-            <Field label="Confirm password"><input className="input" type="password" required value={p2} onChange={(e) => setP2(e.target.value)} /></Field>
-            <div className="text-[12px] font-semibold text-ink-400 flex items-center gap-2"><Ic n="shield" size={14} className="text-emerald-500" />Passwords are hashed with bcrypt — never stored in plain text.</div>
-            <button className="btn-p w-full" type="submit">Update password</button>
+            <Field label={tt("New password")}><input className="input" type="password" required value={p1} onChange={(e) => setP1(e.target.value)} /></Field>
+            <Field label={tt("Confirm password")}><input className="input" type="password" required value={p2} onChange={(e) => setP2(e.target.value)} /></Field>
+            <div className="text-[12px] font-semibold text-ink-400 flex items-center gap-2"><Ic n="shield" size={14} className="text-emerald-500" />{tt("Passwords are hashed with bcrypt — never stored in plain text.")}</div>
+            <button className="btn-p w-full" type="submit">{tt("Update password")}</button>
           </form>
         )}
       </div>
@@ -256,16 +260,17 @@ export function Forgot({ nav, reset }: { nav: (to: string) => void; reset?: bool
 }
 
 function Shell({ nav, title, sub, children }: { nav: (to: string) => void; title: string; sub: string; children: React.ReactNode }) {
+  const tt = useT();
   return (
     <div className="min-h-screen grid-bg bg-paper dark:bg-ink-950 flex flex-col">
       <header className="max-w-7xl w-full mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Brand nav={nav} />
-        <button className="btn-o btn-sm" onClick={() => nav("/")}><Ic n="chevL" size={14} />Back to site</button>
+        <button className="btn-o btn-sm" onClick={() => nav("/")}><Ic n="chevL" size={14} />{tt("Back to site")}</button>
       </header>
       <main className="flex-1 flex items-start justify-center px-4 py-10">
         <div className="w-full max-w-md">
-          <h1 className="font-display text-[28px] font-bold tracking-tight">{title}</h1>
-          <p className="text-[14px] text-ink-400 mt-1 mb-6">{sub}</p>
+          <h1 className="font-display text-[28px] font-bold tracking-tight">{tt(title)}</h1>
+          <p className="text-[14px] text-ink-400 mt-1 mb-6">{tt(sub)}</p>
           {children}
         </div>
       </main>

@@ -1,14 +1,16 @@
 import { useMemo } from "react";
-import { useApp, me, fmtMoney, fmtNum, attPct, attStatus, todayISO, feeTotal, paidBy, classOf, monthKeys, monthLabel, fmtDateShort, lastSchoolDays } from "../lib/data";
+import { useApp, me, fmtMoney, fmtNum, attPct, attStatus, todayISO, feeTotal, paidBy, classOf, monthKeys, monthLabel, fmtDateShort, uiLocale } from "../lib/data";
 import { Ic } from "../components/icons";
 import { Stat, AreaChart, DuoBars, Donut, Ring, HBars, Avatar, Reveal, Chip } from "../components/ui";
+import { useT } from "../lib/i18n";
 
 export function PageHead({ title, sub, children }: { title: string; sub?: string; children?: React.ReactNode }) {
+  const tt = useT();
   return (
     <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
       <div>
-        <h1 className="font-display text-[26px] sm:text-[30px] font-bold tracking-tight leading-tight">{title}</h1>
-        {sub && <p className="text-[13.5px] text-ink-400 mt-0.5">{sub}</p>}
+        <h1 className="font-display text-[26px] sm:text-[30px] font-bold tracking-tight leading-tight">{tt(title)}</h1>
+        {sub && <p className="text-[13.5px] text-ink-400 mt-0.5">{tt(sub)}</p>}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </div>
@@ -17,6 +19,7 @@ export function PageHead({ title, sub, children }: { title: string; sub?: string
 
 export default function Dashboard({ nav }: { nav: (to: string) => void }) {
   const s = useApp();
+  const tt = useT();
   const db = s.db;
   const user = me(s);
   const cur = db.school.currency;
@@ -52,47 +55,47 @@ export default function Dashboard({ nav }: { nav: (to: string) => void }) {
           <div className="flex-1 min-w-[240px]">
             <div className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-gold-400">{db.school.motto}</div>
             <h1 className="font-display text-[26px] sm:text-[32px] font-bold tracking-tight mt-1">
-              {new Date().getHours() < 12 ? "Good morning" : "Good afternoon"}, {user?.name.split(" ")[0]}
+              {new Date().getHours() < 12 ? tt("Good morning") : tt("Good afternoon")}, {user?.name.split(" ")[0]}
             </h1>
-            <p className="text-[13.5px] text-ink-300 mt-1">Here's what's happening at {db.school.name} today — {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}.</p>
+            <p className="text-[13.5px] text-ink-300 mt-1">{tt("Here's what's happening at")} {db.school.name} {tt("today")} — {new Date().toLocaleDateString(uiLocale(), { weekday: "long", day: "numeric", month: "long" })}.</p>
           </div>
           <div className="flex gap-2.5">
-            <button className="btn-gold" onClick={() => nav("/app/students")}><Ic n="userplus" size={16} />New admission</button>
-            <button className="btn-o !bg-white/[0.06] !border-white/15 !text-white hover:!border-gold-400 hover:!text-gold-300" onClick={() => nav("/app/payments")}><Ic n="payment" size={16} />Record payment</button>
+            <button className="btn-gold" onClick={() => nav("/app/students")}><Ic n="userplus" size={16} />{tt("New admission")}</button>
+            <button className="btn-o !bg-white/[0.06] !border-white/15 !text-white hover:!border-gold-400 hover:!text-gold-300" onClick={() => nav("/app/payments")}><Ic n="payment" size={16} />{tt("Record payment")}</button>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5 mb-5">
-        <Stat label="Total students" value={db.students.length} sub={`${fmtNum(d.active)} active`} icon="students" />
-        <Stat label="Teachers" value={db.teachers.length} sub={`${db.teachers.filter((x) => x.status === "active").length} on duty`} icon="teacher" tone="navy" />
-        <Stat label="Attendance today" value={d.att} sub={`${d.statuses.A} absent · ${d.statuses.L} late`} icon="attendance" tone="green" count />
-        <Stat label="Classes" value={db.classes.length} sub={`${db.subjects.length} subjects`} icon="class" tone="gold" />
+        <Stat label="Total students" value={db.students.length} sub={`${fmtNum(d.active)} ${tt("active")}`} icon="students" />
+        <Stat label="Teachers" value={db.teachers.length} sub={`${db.teachers.filter((x) => x.status === "active").length} ${tt("on duty")}`} icon="teacher" tone="navy" />
+        <Stat label="Attendance today" value={d.att} sub={`${d.statuses.A} ${tt("absent")} · ${d.statuses.L} ${tt("late")}`} icon="attendance" tone="green" count />
+        <Stat label="Classes" value={db.classes.length} sub={`${db.subjects.length} ${tt("subjects")}`} icon="class" tone="gold" />
         <Stat label="Payments today" value={d.payToday} money={cur} icon="payment" tone="green" />
         <Stat label="Monthly revenue" value={d.mRev} money={cur} sub={`▲ vs ${fmtMoney(d.revBy[d.revBy.length - 2], "")}`} icon="coins" />
-        <Stat label="Pending fees" value={d.outstanding} money={cur} sub={`${d.unpaidCount} unpaid students`} icon="alert" tone="red" />
-        <Stat label="Net position" value={d.mRev - d.mExp} money={cur} sub={`Expenses ${fmtMoney(d.mExp, cur)}`} icon="analytics" tone="navy" />
+        <Stat label="Pending fees" value={d.outstanding} money={cur} sub={`${d.unpaidCount} ${tt("unpaid students")}`} icon="alert" tone="red" />
+        <Stat label="Net position" value={d.mRev - d.mExp} money={cur} sub={`${tt("Expenses")} ${fmtMoney(d.mExp, cur)}`} icon="analytics" tone="navy" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-4">
         <Reveal className="lg:col-span-2">
           <div className="panel h-full">
             <div className="panel-h">
-              <div><h3 className="font-display font-bold text-[16px]">Revenue vs Expenses</h3><p className="text-[12px] text-ink-400">Last 8 months · {cur}</p></div>
-              <Chip tone="green">+{Math.round(((d.mRev - d.mExp) / Math.max(1, d.mRev)) * 100)}% margin</Chip>
+              <div><h3 className="font-display font-bold text-[16px]">{tt("Revenue vs Expenses")}</h3><p className="text-[12px] text-ink-400">{tt("Last 8 months")} · {cur}</p></div>
+              <Chip tone="green">+{Math.round(((d.mRev - d.mExp) / Math.max(1, d.mRev)) * 100)}% {tt("margin")}</Chip>
             </div>
-            <div className="px-5 pb-5"><DuoBars data={d.mk.map((m, i) => ({ label: monthLabel(m), a: Math.round(d.revBy[i] / 1000), b: Math.round(d.expBy[i] / 1000) }))} aLabel="Revenue (K)" bLabel="Expenses (K)" money="K" /></div>
+            <div className="px-5 pb-5"><DuoBars data={d.mk.map((m, i) => ({ label: monthLabel(m), a: Math.round(d.revBy[i] / 1000), b: Math.round(d.expBy[i] / 1000) }))} aLabel={tt("Revenue vs Expenses").split(" ")[0]} bLabel={tt("Expenses")} money="K" /></div>
           </div>
         </Reveal>
         <Reveal delay={80}>
           <div className="panel h-full">
-            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">Attendance today</h3><Chip tone="blue">{d.active} students</Chip></div>
+            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">{tt("Attendance today")}</h3><Chip tone="blue">{d.active} {tt("students")}</Chip></div>
             <div className="px-5 pb-5 flex justify-center">
-              <Donut label={`${d.att}%`} sub="present" segments={[
-                { value: d.statuses.P, color: "#10b981", name: "Present" },
-                { value: d.statuses.L, color: "#dca638", name: "Late" },
-                { value: d.statuses.A, color: "#f43f5e", name: "Absent" },
-                { value: d.statuses.E, color: "#6f90c2", name: "Excused" },
+              <Donut label={`${d.att}%`} sub={tt("present")} segments={[
+                { value: d.statuses.P, color: "#10b981", name: tt("Present") },
+                { value: d.statuses.L, color: "#dca638", name: tt("Late") },
+                { value: d.statuses.A, color: "#f43f5e", name: tt("Absent") },
+                { value: d.statuses.E, color: "#6f90c2", name: tt("Excused") },
               ]} />
             </div>
           </div>
@@ -102,19 +105,19 @@ export default function Dashboard({ nav }: { nav: (to: string) => void }) {
       <div className="grid lg:grid-cols-3 gap-4 mb-4">
         <Reveal>
           <div className="panel h-full">
-            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">Student enrollment</h3><Ic n="arrowUR" className="text-cobalt-500" /></div>
+            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">{tt("Student enrollment")}</h3><Ic n="arrowUR" className="text-cobalt-500" /></div>
             <div className="px-5 pb-5"><AreaChart data={d.enroll.map((x) => x || 1)} labels={d.mk.map(monthLabel)} h={110} id="enroll" /></div>
           </div>
         </Reveal>
         <Reveal delay={70}>
           <div className="panel h-full">
-            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">Fee collection</h3><button className="btn-g btn-sm" onClick={() => nav("/app/finreports")}>Report<Ic n="chevR" size={13} /></button></div>
+            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">{tt("Fee collection")}</h3><button className="btn-g btn-sm" onClick={() => nav("/app/finreports")}>{tt("Report")}<Ic n="chevR" size={13} /></button></div>
             <div className="px-5 pb-5">
               <div className="flex items-center gap-4 mb-4">
                 <Ring value={Math.min(100, Math.round((db.payments.reduce((a, b) => a + b.amount, 0) / Math.max(1, db.students.filter((x) => x.status === "active").reduce((a, x) => a + feeTotal(db, classOf(db, x)?.level ?? 1), 0))) * 100))} size={92} color="#c98f1b" />
                 <div className="text-[13px] space-y-1.5">
-                  <p className="font-bold">of annual fees collected</p>
-                  <p className="text-ink-400 text-[12.5px]">{fmtMoney(d.outstanding, cur)} still outstanding across <b className="text-rose-500">{d.unpaidCount} students</b></p>
+                  <p className="font-bold">{tt("of annual fees collected")}</p>
+                  <p className="text-ink-400 text-[12.5px]">{fmtMoney(d.outstanding, cur)} {tt("still outstanding across")} <b className="text-rose-500">{d.unpaidCount} {tt("students")}</b></p>
                 </div>
               </div>
               <HBars rows={d.byClass.map((c, i) => ({ ...c, value: Math.round(c.value / 1000), color: ["#1e49c9", "#2b5ce9", "#4f7df3", "#dca638", "#c98f1b", "#6f90c2"][i] }))} money="K" />
@@ -123,7 +126,7 @@ export default function Dashboard({ nav }: { nav: (to: string) => void }) {
         </Reveal>
         <Reveal delay={140}>
           <div className="panel h-full">
-            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">Upcoming events</h3><button className="btn-g btn-sm" onClick={() => nav("/app/calendar")}>Calendar<Ic n="chevR" size={13} /></button></div>
+            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">{tt("Upcoming events")}</h3><button className="btn-g btn-sm" onClick={() => nav("/app/calendar")}>{tt("Calendar")}<Ic n="chevR" size={13} /></button></div>
             <div className="px-3 pb-4">
               {events.map((e) => (
                 <div key={e.id} className="flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-ink-50 dark:hover:bg-ink-950/60 transition-colors">
@@ -146,10 +149,10 @@ export default function Dashboard({ nav }: { nav: (to: string) => void }) {
       <div className="grid lg:grid-cols-3 gap-4">
         <Reveal className="lg:col-span-2">
           <div className="panel">
-            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">Recent payments</h3><button className="btn-g btn-sm" onClick={() => nav("/app/payments")}>View all<Ic n="chevR" size={13} /></button></div>
+            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">{tt("Recent payments")}</h3><button className="btn-g btn-sm" onClick={() => nav("/app/payments")}>{tt("View all")}<Ic n="chevR" size={13} /></button></div>
             <div className="overflow-x-auto">
               <table className="tbl">
-                <thead><tr><th>Receipt</th><th>Student</th><th>Method</th><th>Date</th><th className="!text-right">Amount</th></tr></thead>
+                <thead><tr><th>{tt("Receipt")}</th><th>{tt("Student")}</th><th>{tt("Method")}</th><th>{tt("Date")}</th><th className="!text-right">{tt("Amount")}</th></tr></thead>
                 <tbody>
                   {[...db.payments].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 7).map((p) => {
                     const st = db.students.find((x) => x.id === p.studentId);
@@ -170,7 +173,7 @@ export default function Dashboard({ nav }: { nav: (to: string) => void }) {
         </Reveal>
         <Reveal delay={80}>
           <div className="panel h-full">
-            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">Recent registrations</h3><button className="btn-g btn-sm" onClick={() => nav("/app/students")}>All<Ic n="chevR" size={13} /></button></div>
+            <div className="panel-h"><h3 className="font-display font-bold text-[16px]">{tt("Recent registrations")}</h3><button className="btn-g btn-sm" onClick={() => nav("/app/students")}>{tt("All")}<Ic n="chevR" size={13} /></button></div>
             <div className="px-4 pb-4 space-y-1">
               {d.recentAdm.map((x) => {
                 const c = classOf(db, x);
@@ -179,7 +182,7 @@ export default function Dashboard({ nav }: { nav: (to: string) => void }) {
                     <Avatar first={x.first} last={x.last} hue={x.hue} size={34} />
                     <span className="min-w-0 flex-1">
                       <span className="block text-[13px] font-bold truncate">{x.first} {x.last}</span>
-                      <span className="block text-[11px] text-ink-400">{c?.name} {c?.section} · admitted {fmtDateShort(x.admitted)}</span>
+                      <span className="block text-[11px] text-ink-400">{c?.name} {c?.section} · {tt("admitted")} {fmtDateShort(x.admitted)}</span>
                     </span>
                     <Ic n="chevR" size={14} className="text-ink-300" />
                   </button>
@@ -187,7 +190,7 @@ export default function Dashboard({ nav }: { nav: (to: string) => void }) {
               })}
             </div>
             <div className="border-t border-ink-100 dark:border-ink-800 px-4 py-3.5">
-              <h4 className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400 mb-2">Recent activity</h4>
+              <h4 className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400 mb-2">{tt("Recent activity")}</h4>
               {db.audits.slice(0, 4).map((a) => (
                 <div key={a.id} className="flex gap-2.5 py-1.5 text-[12px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-gold-400 mt-1.5 shrink-0" />
@@ -209,7 +212,7 @@ export default function Dashboard({ nav }: { nav: (to: string) => void }) {
           <Reveal key={i} delay={i * 60}>
             <button onClick={() => nav(x.to)} className="panel w-full p-4 flex items-center gap-3.5 hover:shadow-lift hover:-translate-y-0.5 transition-all text-left cursor-pointer group">
               <span className="w-10 h-10 rounded-lg bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-300 flex items-center justify-center group-hover:bg-cobalt-600 group-hover:text-white transition-colors"><Ic n={x.ic} /></span>
-              <span><span className="block font-display font-bold text-xl tnum">{x.v}</span><span className="block text-[11.5px] font-bold uppercase tracking-wide text-ink-400">{x.l}</span></span>
+              <span><span className="block font-display font-bold text-xl tnum">{x.v}</span><span className="block text-[11.5px] font-bold uppercase tracking-wide text-ink-400">{tt(x.l)}</span></span>
               <Ic n="arrowUR" size={15} className="ml-auto text-ink-300 group-hover:text-cobalt-500 transition-colors" />
             </button>
           </Reveal>

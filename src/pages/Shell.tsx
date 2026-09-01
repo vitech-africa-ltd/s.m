@@ -1,60 +1,61 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useApp, can, me, mutate, setPrefs, fmtDateShort } from "../lib/data";
 import { Ic } from "../components/icons";
-import { t, LANGS } from "../lib/i18n";
+import { useT, LANGS } from "../lib/i18n";
 import { Avatar } from "../components/ui";
 
 export interface NavItem { to: string; icon: string; label: string; perm?: string; superOnly?: boolean; portalOnly?: boolean }
 export interface NavGroup { title: string; items: NavItem[] }
 
 export const NAV: NavGroup[] = [
-  { title: "overview", items: [
-    { to: "/app", icon: "dashboard", label: "dashboard" },
-    { to: "/app/portal", icon: "user", label: "portal", portalOnly: true },
-    { to: "/app/analytics", icon: "analytics", label: "analytics", perm: "analytics" },
+  { title: "Overview", items: [
+    { to: "/app", icon: "dashboard", label: "Dashboard" },
+    { to: "/app/portal", icon: "user", label: "My Portal", portalOnly: true },
+    { to: "/app/analytics", icon: "analytics", label: "Analytics", perm: "analytics" },
   ]},
-  { title: "people", items: [
-    { to: "/app/students", icon: "students", label: "students", perm: "students" },
-    { to: "/app/admissions", icon: "userplus", label: "admissions", perm: "admissions" },
-    { to: "/app/teachers", icon: "teacher", label: "teachers", perm: "teachers" },
-    { to: "/app/hr", icon: "briefcase", label: "hr", perm: "hr" },
+  { title: "People", items: [
+    { to: "/app/students", icon: "students", label: "Students", perm: "students" },
+    { to: "/app/admissions", icon: "userplus", label: "Admissions", perm: "admissions" },
+    { to: "/app/teachers", icon: "teacher", label: "Teachers", perm: "teachers" },
+    { to: "/app/hr", icon: "briefcase", label: "HR & Staff", perm: "hr" },
   ]},
-  { title: "academics", items: [
-    { to: "/app/classes", icon: "class", label: "classes", perm: "classes" },
-    { to: "/app/subjects", icon: "subject", label: "subjects", perm: "classes" },
-    { to: "/app/timetable", icon: "timetable", label: "timetable", perm: "timetable" },
-    { to: "/app/attendance", icon: "attendance", label: "attendance", perm: "attendance" },
-    { to: "/app/exams", icon: "exams", label: "exams", perm: "exams" },
-    { to: "/app/grades", icon: "grades", label: "grades", perm: "grades" },
-    { to: "/app/reportcards", icon: "award", label: "reports_cards", perm: "reports_cards" },
+  { title: "Academics", items: [
+    { to: "/app/classes", icon: "class", label: "Classes", perm: "classes" },
+    { to: "/app/subjects", icon: "subject", label: "Subjects", perm: "classes" },
+    { to: "/app/timetable", icon: "timetable", label: "Timetable", perm: "timetable" },
+    { to: "/app/attendance", icon: "attendance", label: "Attendance", perm: "attendance" },
+    { to: "/app/exams", icon: "exams", label: "Exams", perm: "exams" },
+    { to: "/app/grades", icon: "grades", label: "Grades", perm: "grades" },
+    { to: "/app/reportcards", icon: "award", label: "Report cards", perm: "reports_cards" },
   ]},
-  { title: "finance", items: [
-    { to: "/app/fees", icon: "fees", label: "fees", perm: "fees" },
-    { to: "/app/payments", icon: "payment", label: "payments", perm: "payments" },
-    { to: "/app/invoices", icon: "receipt", label: "invoices", perm: "payments" },
-    { to: "/app/expenses", icon: "expenses", label: "expenses", perm: "expenses" },
-    { to: "/app/finreports", icon: "reports", label: "fin_reports", perm: "fin_reports" },
+  { title: "Finance", items: [
+    { to: "/app/fees", icon: "fees", label: "Fees & Structures", perm: "fees" },
+    { to: "/app/payments", icon: "payment", label: "Payments", perm: "payments" },
+    { to: "/app/invoices", icon: "receipt", label: "Invoices", perm: "payments" },
+    { to: "/app/expenses", icon: "expenses", label: "Expenses", perm: "expenses" },
+    { to: "/app/finreports", icon: "reports", label: "Financial Reports", perm: "fin_reports" },
   ]},
-  { title: "engagement", items: [
-    { to: "/app/communication", icon: "comm", label: "communication", perm: "communication" },
-    { to: "/app/announcements", icon: "megaphone", label: "announcements", perm: "communication" },
-    { to: "/app/calendar", icon: "calendar", label: "calendar" },
-    { to: "/app/library", icon: "book", label: "library", perm: "library" },
-    { to: "/app/transport", icon: "bus", label: "transport", perm: "transport" },
+  { title: "Engagement", items: [
+    { to: "/app/communication", icon: "comm", label: "Communication", perm: "communication" },
+    { to: "/app/announcements", icon: "megaphone", label: "Announcements", perm: "communication" },
+    { to: "/app/calendar", icon: "calendar", label: "Calendar" },
+    { to: "/app/library", icon: "book", label: "Library", perm: "library" },
+    { to: "/app/transport", icon: "bus", label: "Transport", perm: "transport" },
   ]},
-  { title: "management", items: [
-    { to: "/app/documents", icon: "folder", label: "documents", perm: "documents" },
-    { to: "/app/certificates", icon: "award", label: "certificates", perm: "certificates" },
-    { to: "/app/idcards", icon: "idcard", label: "idcards", perm: "idcards" },
-    { to: "/app/audit", icon: "audit", label: "audit", perm: "audit" },
-    { to: "/app/backups", icon: "database", label: "backups", perm: "backups" },
-    { to: "/app/settings", icon: "settings", label: "settings", perm: "settings" },
-    { to: "/app/platform", icon: "globe", label: "platform", perm: "dashboard", superOnly: true },
+  { title: "Management", items: [
+    { to: "/app/documents", icon: "folder", label: "Documents", perm: "documents" },
+    { to: "/app/certificates", icon: "award", label: "Certificates", perm: "certificates" },
+    { to: "/app/idcards", icon: "idcard", label: "ID cards", perm: "idcards" },
+    { to: "/app/audit", icon: "audit", label: "Audit logs", perm: "audit" },
+    { to: "/app/backups", icon: "database", label: "Backups", perm: "backups" },
+    { to: "/app/settings", icon: "settings", label: "Settings", perm: "settings" },
+    { to: "/app/platform", icon: "globe", label: "Platform (SaaS)", perm: "dashboard", superOnly: true },
   ]},
 ];
 
 function GlobalSearch({ open, onClose, nav }: { open: boolean; onClose: () => void; nav: (to: string) => void }) {
   const s = useApp();
+  const tt = useT();
   const [q, setQ] = useState("");
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { if (open) { setQ(""); setTimeout(() => ref.current?.focus(), 30); } }, [open]);
@@ -84,7 +85,7 @@ function GlobalSearch({ open, onClose, nav }: { open: boolean; onClose: () => vo
       <div className="relative w-full max-w-xl panel pop-in overflow-hidden shadow-pop">
         <div className="flex items-center gap-3 px-4 border-b border-ink-100 dark:border-ink-800">
           <Ic n="search" className="text-ink-300" />
-          <input ref={ref} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search students, teachers, receipts, documents…" className="flex-1 h-13 py-4 bg-transparent outline-none text-[15px]" onKeyDown={(e) => { if (e.key === "Enter" && results[0]) { nav(results[0].to); onClose(); } }} />
+          <input ref={ref} value={q} onChange={(e) => setQ(e.target.value)} placeholder={tt("Search anything…")} className="flex-1 h-13 py-4 bg-transparent outline-none text-[15px]" onKeyDown={(e) => { if (e.key === "Enter" && results[0]) { nav(results[0].to); onClose(); } }} />
           <span className="kbd">ESC</span>
         </div>
         <div className="max-h-[50vh] overflow-y-auto p-2">
@@ -107,6 +108,7 @@ function GlobalSearch({ open, onClose, nav }: { open: boolean; onClose: () => vo
 
 function Bell({ nav }: { nav: (to: string) => void }) {
   const s = useApp();
+  const tt = useT();
   const [open, setOpen] = useState(false);
   const unread = s.db.notifications.filter((n) => !n.read).length;
   const icons: Record<string, string> = { payment: "payment", absent: "alert", admission: "userplus", fee: "coins", exam: "exams", system: "database" };
@@ -121,8 +123,8 @@ function Bell({ nav }: { nav: (to: string) => void }) {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-11 z-50 w-[340px] panel pop-in shadow-pop overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-ink-100 dark:border-ink-800">
-              <b className="font-display text-[15px]">{t(s.prefs.lang, "notifications")}</b>
-              <button className="text-[12px] font-bold text-cobalt-600 dark:text-cobalt-400 hover:underline cursor-pointer" onClick={() => mutate((db) => db.notifications.forEach((n) => (n.read = true)))}>Mark all read</button>
+              <b className="font-display text-[15px]">{tt("Notifications")}</b>
+              <button className="text-[12px] font-bold text-cobalt-600 dark:text-cobalt-400 hover:underline cursor-pointer" onClick={() => mutate((db) => db.notifications.forEach((n) => (n.read = true)))}>{tt("Mark all read")}</button>
             </div>
             <div className="max-h-[380px] overflow-y-auto">
               {s.db.notifications.slice(0, 8).map((n) => (
@@ -147,6 +149,7 @@ function Bell({ nav }: { nav: (to: string) => void }) {
 
 export default function Shell({ nav, path, children, onLogout }: { nav: (to: string) => void; path: string; children: ReactNode; onLogout: () => void }) {
   const s = useApp();
+  const tt = useT();
   const user = me(s);
   const lang = s.prefs.lang;
   const [drawer, setDrawer] = useState(false);
@@ -193,10 +196,10 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
       <nav className="flex-1 overflow-y-auto px-3 pb-4" aria-label="Main navigation">
         {groups.map((g) => (
           <div key={g.title}>
-            <div className="side-h">{t(lang, g.title)}</div>
+            <div className="side-h">{tt(g.title)}</div>
             {g.items.map((it) => (
               <button key={it.to} onClick={() => nav(it.to)} className={`nav-i w-full mb-0.5 ${isOn(it.to) ? "on" : ""}`} aria-current={isOn(it.to) ? "page" : undefined}>
-                <Ic n={it.icon} size={17} />{t(lang, it.label)}
+                <Ic n={it.icon} size={17} />{tt(it.label)}
                 {it.to === "/app/admissions" && s.db.admissions.filter((a) => !["enrolled", "rejected"].includes(a.stage)).length > 0 &&
                   <span className="ml-auto chip !px-1.5 !py-0 bg-gold-400 text-ink-950">{s.db.admissions.filter((a) => !["enrolled", "rejected"].includes(a.stage)).length}</span>}
               </button>
@@ -215,11 +218,11 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
   );
 
   const mobileTabs = [
-    { to: "/app", icon: "dashboard", label: "Home" },
+    { to: "/app", icon: "dashboard", label: "Dashboard" },
     { to: "/app/students", icon: "students", label: "Students", perm: "students" },
     { to: "/app/attendance", icon: "attendance", label: "Attendance", perm: "attendance" },
     { to: "/app/payments", icon: "payment", label: "Payments", perm: "payments" },
-    { to: "/app/communication", icon: "comm", label: "Messages", perm: "communication" },
+    { to: "/app/communication", icon: "comm", label: "Communication", perm: "communication" },
   ].filter((tb) => !tb.perm || can(role, tb.perm) || role === "super" || role === "admin");
 
   return (
@@ -240,13 +243,13 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
         <header className="sticky top-0 z-50 h-16 flex items-center gap-2 px-4 sm:px-6 border-b border-ink-100 dark:border-ink-800 bg-paper/90 dark:bg-ink-950/90 backdrop-blur">
           <button className="lg:hidden btn-g !px-2" onClick={() => setDrawer(true)} aria-label="Open menu"><Ic n="menu" /></button>
           <button onClick={() => setSearch(true)} className="flex items-center gap-2.5 h-10 px-3.5 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 text-[13px] font-semibold text-ink-400 hover:border-cobalt-400 transition-colors cursor-pointer min-w-0 flex-1 max-w-md">
-            <Ic n="search" size={16} /><span className="hidden sm:inline truncate">{t(lang, "search")}</span>
+            <Ic n="search" size={16} /><span className="hidden sm:inline truncate">{tt("Search anything…")}</span>
             <span className="ml-auto hidden sm:flex gap-1"><span className="kbd">Ctrl</span><span className="kbd">K</span></span>
           </button>
           <span className="hidden md:inline-flex chip bg-gold-100 text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 !px-3">{s.db.school.term} · {s.db.school.academicYear}</span>
           <div className="ml-auto flex items-center gap-1">
-            <select className="input !w-auto !h-9 !text-[12px] font-bold hidden sm:block" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label="Language">
-              {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+            <select className="input !w-auto !h-9 !text-[12px] font-bold hidden sm:block" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
+              {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
             </select>
             <button className="btn-g !px-2.5" onClick={() => setPrefs({ theme: s.prefs.theme === "dark" ? "light" : "dark" })} aria-label="Toggle dark mode">
               <Ic n={s.prefs.theme === "dark" ? "sun" : "moon"} size={18} />
@@ -269,8 +272,8 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
                       <div className="text-[13px] font-bold">{user?.name}</div>
                       <div className="text-[11.5px] text-ink-400">{user?.email}</div>
                     </div>
-                    <button className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold hover:bg-ink-50 dark:hover:bg-ink-800 transition-colors cursor-pointer" onClick={() => { setUserMenu(false); nav("/app/settings"); }}><Ic n="settings" size={15} />Settings</button>
-                    <button className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold hover:bg-ink-50 dark:hover:bg-ink-800 transition-colors cursor-pointer text-rose-600" onClick={onLogout}><Ic n="logout" size={15} />{t(lang, "logout")}</button>
+                    <button className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold hover:bg-ink-50 dark:hover:bg-ink-800 transition-colors cursor-pointer" onClick={() => { setUserMenu(false); nav("/app/settings"); }}><Ic n="settings" size={15} />{tt("Settings")}</button>
+                    <button className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold hover:bg-ink-50 dark:hover:bg-ink-800 transition-colors cursor-pointer text-rose-600" onClick={onLogout}><Ic n="logout" size={15} />{tt("Sign out")}</button>
                   </div>
                 </>
               )}
@@ -284,7 +287,7 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 grid grid-cols-5" aria-label="Mobile navigation">
         {mobileTabs.slice(0, 5).map((tb) => (
           <button key={tb.to} onClick={() => nav(tb.to)} className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-bold transition-colors cursor-pointer ${isOn(tb.to) ? "text-cobalt-600 dark:text-cobalt-300" : "text-ink-400"}`}>
-            <Ic n={tb.icon} size={19} />{tb.label}
+            <Ic n={tb.icon} size={19} />{tt(tb.label)}
             {isOn(tb.to) && <span className="w-1 h-1 rounded-full bg-gold-400" />}
           </button>
         ))}

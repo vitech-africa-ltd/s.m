@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Ic } from "./icons";
+import { useT } from "../lib/i18n";
 
 /* ---------- hooks ---------- */
 export function useMounted() { const [m, setM] = useState(false); useEffect(() => { const t = requestAnimationFrame(() => setM(true)); return () => cancelAnimationFrame(t); }, []); return m; }
@@ -47,6 +48,7 @@ export const Chip = ({ tone = "gray", children, className = "" }: { tone?: "gray
 export const Dot = ({ tone = "green" }: { tone?: string }) => <span className={`inline-block w-1.5 h-1.5 rounded-full bg-${tone}-500`} />;
 
 export function Stat({ label, value, sub, icon, tone = "blue", count = true, money = false, prefix = "" }: { label: string; value: number; sub?: ReactNode; icon: string; tone?: "blue" | "gold" | "green" | "red" | "navy"; count?: boolean; money?: string | false; prefix?: string }) {
+  const tt = useT();
   const v = useCountUp(value);
   const tones = { blue: "bg-cobalt-600", gold: "bg-gold-400 text-ink-950", green: "bg-emerald-500", red: "bg-rose-500", navy: "bg-ink-900 dark:bg-ink-700" };
   const display = money ? `${prefix}${Math.round(v).toLocaleString("en-US")} ${money}` : `${prefix}${Math.round(v).toLocaleString("en-US")}`;
@@ -54,7 +56,7 @@ export function Stat({ label, value, sub, icon, tone = "blue", count = true, mon
     <div className="panel p-4 flex items-start gap-3.5 hover:shadow-lift hover:-translate-y-0.5 transition-all duration-200 group">
       <span className={`w-10 h-10 rounded-lg flex items-center justify-center text-white shrink-0 ${tones[tone]} group-hover:scale-105 transition-transform`}><Ic n={icon} /></span>
       <div className="min-w-0">
-        <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-ink-400">{label}</div>
+        <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-ink-400">{tt(label)}</div>
         <div className="font-display text-[22px] leading-7 font-bold tnum truncate">{count ? display : `${prefix}${value.toLocaleString("en-US")}${money ? ` ${money}` : ""}`}</div>
         {sub && <div className="text-[12px] text-ink-400 mt-0.5">{sub}</div>}
       </div>
@@ -85,9 +87,10 @@ export function Modal({ open, onClose, title, children, w = "max-w-lg", footer }
   );
 }
 export function Confirm({ open, onClose, onYes, title, body, yes = "Delete" }: { open: boolean; onClose: () => void; onYes: () => void; title: string; body: string; yes?: string }) {
+  const tt = useT();
   return (
     <Modal open={open} onClose={onClose} title={title} w="max-w-sm"
-      footer={<><button className="btn-o btn-sm" onClick={onClose}>Cancel</button><button className="btn-d btn-sm" onClick={() => { onYes(); onClose(); }}>{yes}</button></>}>
+      footer={<><button className="btn-o btn-sm" onClick={onClose}>{tt("Cancel")}</button><button className="btn-d btn-sm" onClick={() => { onYes(); onClose(); }}>{tt(yes)}</button></>}>
       <div className="flex gap-3">
         <span className="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-500/15 text-rose-600 flex items-center justify-center shrink-0"><Ic n="alert" /></span>
         <p className="text-sm text-ink-500 dark:text-ink-300">{body}</p>
@@ -113,9 +116,10 @@ export function Tabs({ tabs, active, onChange }: { tabs: { id: string; label: st
   );
 }
 export function Pagination({ page, pages, onPage, total, shown }: { page: number; pages: number; onPage: (p: number) => void; total: number; shown: number }) {
+  const tt = useT();
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3 text-[13px] text-ink-400">
-      <span>Showing <b className="text-ink-700 dark:text-ink-200">{shown}</b> of <b className="text-ink-700 dark:text-ink-200">{total.toLocaleString()}</b></span>
+      <span>{tt("Showing")} <b className="text-ink-700 dark:text-ink-200">{shown}</b> {tt("of")} <b className="text-ink-700 dark:text-ink-200">{total.toLocaleString()}</b></span>
       <div className="flex items-center gap-1">
         <button className="btn-g btn-sm !px-2" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous"><Ic n="chevL" size={15} /></button>
         {Array.from({ length: Math.min(5, pages) }, (_, i) => {

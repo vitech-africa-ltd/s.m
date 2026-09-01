@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useApp, fmtMoney, fmtNum, attPct, todayISO, CURRENCIES, CURRENCY_MAP, fmtMoneyConv, fxRateLabel } from "../lib/data";
 import { Ic } from "../components/icons";
 import { Reveal, AreaChart } from "../components/ui";
-import { LANGS, t } from "../lib/i18n";
+import { LANGS, useT } from "../lib/i18n";
 import { setPrefs } from "../lib/data";
 
 const FEED = [
@@ -80,6 +80,7 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
   const s = useApp();
   const { school, plans } = s.db;
   const lang = s.prefs.lang;
+  const tt = useT();
   const [priceCur, setPriceCur] = useState("USD");
 
   const features: { ic: string; title: string; body: string; big?: boolean }[] = [
@@ -108,17 +109,17 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
             <span className="font-display font-bold text-[17px] tracking-tight">VITECH <span className="text-cobalt-600 dark:text-cobalt-400">School</span></span>
           </button>
           <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-semibold text-ink-500 dark:text-ink-300">
-            <a href="#features" className="hover:text-ink-900 dark:hover:text-white transition-colors">Features</a>
-            <a href="#roles" className="hover:text-ink-900 dark:hover:text-white transition-colors">Roles</a>
-            <a href="#pricing" className="hover:text-ink-900 dark:hover:text-white transition-colors">Pricing</a>
-            <a href="#security" className="hover:text-ink-900 dark:hover:text-white transition-colors">Security</a>
+            <a href="#features" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Features")}</a>
+            <a href="#roles" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Roles")}</a>
+            <a href="#pricing" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Pricing")}</a>
+            <a href="#security" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Security")}</a>
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <select className="input !w-auto !h-9 !text-[12.5px] font-semibold" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label="Language">
-              {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+            <select className="input !w-auto !h-9 !text-[12.5px] font-semibold" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
+              {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
             </select>
-            <button className="btn-o btn-sm hidden sm:inline-flex" onClick={() => nav("/login")}>Login</button>
-            <button className="btn-p btn-sm" onClick={() => nav("/register")}>Get Started</button>
+            <button className="btn-o btn-sm hidden sm:inline-flex" onClick={() => nav("/login")}>{tt("Login")}</button>
+            <button className="btn-p btn-sm" onClick={() => nav("/register")}>{tt("Get Started")}</button>
           </div>
         </div>
       </header>
@@ -130,31 +131,33 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
             <Reveal>
               <div className="inline-flex items-center gap-2 rounded-full border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 px-3.5 py-1.5 text-[12px] font-bold text-ink-500 dark:text-ink-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 tick-pulse" />
-                School ERP · SaaS multi-établissements · {school.country}
+                School ERP · Multi-campus SaaS · {school.country}
               </div>
             </Reveal>
             <Reveal delay={80}>
               <h1 className="font-display font-bold text-[40px] sm:text-[54px] leading-[1.04] tracking-tight mt-5">
-                Complete School<br />Management <span className="relative inline-block">System<svg viewBox="0 0 220 12" className="absolute -bottom-1.5 left-0 w-full" aria-hidden="true"><path d="M3 9c40-6 140-6 214-2" fill="none" stroke="#dca638" strokeWidth="5" strokeLinecap="round" /></svg></span>
+                {(() => { const words = tt("Complete School Management System").split(" "); const last = words[words.length - 1]; return (
+                  <>{words.slice(0, -1).join(" ")}{" "}<span className="relative inline-block">{last}<svg viewBox="0 0 220 12" className="absolute -bottom-1.5 left-0 w-full" aria-hidden="true"><path d="M3 9c40-6 140-6 214-2" fill="none" stroke="#dca638" strokeWidth="5" strokeLinecap="round" /></svg></span></>
+                ); })()}
               </h1>
             </Reveal>
             <Reveal delay={160}>
               <p className="text-[16.5px] leading-relaxed text-ink-500 dark:text-ink-300 mt-6 max-w-xl">
-                Manage students, teachers, attendance, grades, fees, communication and school operations from one powerful platform.
+                {tt("Manage students, teachers, attendance, grades, fees, communication and school operations from one powerful platform.")}
               </p>
             </Reveal>
             <Reveal delay={240}>
               <div className="flex flex-wrap gap-3 mt-8">
-                <button className="btn-p !h-12 !px-6 !text-[15px]" onClick={() => nav("/register")}><Ic n="zap" />Get Started free</button>
-                <button className="btn-o !h-12 !px-6 !text-[15px]" onClick={() => nav("/login")}>Request a Demo</button>
-                <button className="btn-g !h-12 !px-4 !text-[15px]" onClick={() => nav("/login")}>Login<Ic n="arrowUR" size={16} /></button>
+                <button className="btn-p !h-12 !px-6 !text-[15px]" onClick={() => nav("/register")}><Ic n="zap" />{tt("Get Started free")}</button>
+                <button className="btn-o !h-12 !px-6 !text-[15px]" onClick={() => nav("/login")}>{tt("Request a Demo")}</button>
+                <button className="btn-g !h-12 !px-4 !text-[15px]" onClick={() => nav("/login")}>{tt("Login")}<Ic n="arrowUR" size={16} /></button>
               </div>
             </Reveal>
             <Reveal delay={320}>
               <div className="flex flex-wrap items-center gap-x-8 gap-y-3 mt-10 text-[13px] font-semibold text-ink-400">
-                <span className="flex items-center gap-2"><Ic n="check" size={15} className="text-emerald-500" sw={2.5} />14-day free trial</span>
-                <span className="flex items-center gap-2"><Ic n="check" size={15} className="text-emerald-500" sw={2.5} />No card required</span>
-                <span className="flex items-center gap-2"><Ic n="check" size={15} className="text-emerald-500" sw={2.5} />Multi-campus ready</span>
+                <span className="flex items-center gap-2"><Ic n="check" size={15} className="text-emerald-500" sw={2.5} />{tt("14-day free trial")}</span>
+                <span className="flex items-center gap-2"><Ic n="check" size={15} className="text-emerald-500" sw={2.5} />{tt("No card required")}</span>
+                <span className="flex items-center gap-2"><Ic n="check" size={15} className="text-emerald-500" sw={2.5} />{tt("Multi-campus ready")}</span>
               </div>
             </Reveal>
           </div>
@@ -179,7 +182,7 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
             <div className="panel p-5 text-center hover:-translate-y-1 hover:shadow-lift transition-all duration-200">
               <Ic n={x.ic} size={22} className="mx-auto text-cobalt-600 dark:text-cobalt-400" />
               <div className="font-display text-[26px] font-bold tnum mt-2">{x.v}</div>
-              <div className="text-[12px] font-bold uppercase tracking-[0.1em] text-ink-400">{x.l}</div>
+              <div className="text-[12px] font-bold uppercase tracking-[0.1em] text-ink-400">{tt(x.l)}</div>
             </div>
           </Reveal>
         ))}
@@ -190,10 +193,10 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
         <Reveal>
           <div className="flex items-end justify-between gap-6 flex-wrap mb-8">
             <div>
-              <div className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold-600 dark:text-gold-400">Everything a school runs on</div>
-              <h2 className="font-display text-[32px] sm:text-[40px] font-bold tracking-tight mt-2">One platform. Every operation.</h2>
+              <div className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold-600 dark:text-gold-400">{tt("Everything a school runs on")}</div>
+              <h2 className="font-display text-[32px] sm:text-[40px] font-bold tracking-tight mt-2">{tt("One platform. Every operation.")}</h2>
             </div>
-            <p className="text-[14.5px] text-ink-400 max-w-sm">Twelve connected modules replace the spreadsheets, paper registers and WhatsApp groups your school survives on today.</p>
+            <p className="text-[14.5px] text-ink-400 max-w-sm">{tt("Twelve connected modules replace the spreadsheets, paper registers and WhatsApp groups your school survives on today.")}</p>
           </div>
         </Reveal>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -201,8 +204,8 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
             <Reveal key={i} delay={(i % 4) * 70} className={f.big ? "sm:col-span-2" : ""}>
               <div className={`panel p-5 h-full group hover:-translate-y-1 hover:shadow-lift hover:border-cobalt-300 dark:hover:border-cobalt-700 transition-all duration-200 ${f.big ? "bg-gradient-to-br from-ink-950 to-cobalt-950 !text-ink-100 !border-ink-800" : ""}`}>
                 <div className={`w-11 h-11 rounded-lg flex items-center justify-center mb-3.5 transition-transform group-hover:scale-110 ${f.big ? "bg-gold-400 text-ink-950" : "bg-cobalt-50 dark:bg-cobalt-500/15 text-cobalt-600 dark:text-cobalt-300"}`}><Ic n={f.ic} size={20} /></div>
-                <h3 className="font-display font-bold text-[17px]">{f.title}</h3>
-                <p className={`text-[13.5px] leading-relaxed mt-1.5 ${f.big ? "text-ink-300" : "text-ink-400"}`}>{f.body}</p>
+                <h3 className="font-display font-bold text-[17px]">{tt(f.title)}</h3>
+                <p className={`text-[13.5px] leading-relaxed mt-1.5 ${f.big ? "text-ink-300" : "text-ink-400"}`}>{tt(f.body)}</p>
                 {f.big && i === 0 && (
                   <div className="mt-4"><AreaChart data={[12, 18, 15, 24, 31, 29, 38, 46]} labels={["S1", "S2", "S3", "S4", "S5", "S6", "T2", "T3"]} h={90} color="#dca638" id="hero2" /></div>
                 )}
@@ -219,10 +222,10 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
           <Reveal>
             <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-10 items-center">
               <div>
-                <div className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold-400">Role-based access</div>
-                <h2 className="font-display text-[32px] sm:text-[38px] font-bold tracking-tight mt-2">A portal for every person in your school</h2>
-                <p className="text-ink-300 text-[14.5px] mt-4 leading-relaxed">Twelve roles, each with its own dashboard and granular permissions. Teachers see only their classes, parents only their children, accountants only finance.</p>
-                <button className="btn-gold mt-6" onClick={() => nav("/login")}><Ic n="shield" />Explore role permissions</button>
+                <div className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold-400">{tt("Role-based access")}</div>
+                <h2 className="font-display text-[32px] sm:text-[38px] font-bold tracking-tight mt-2">{tt("A portal for every person in your school")}</h2>
+                <p className="text-ink-300 text-[14.5px] mt-4 leading-relaxed">{tt("Twelve roles, each with its own dashboard and granular permissions. Teachers see only their classes, parents only their children, accountants only finance.")}</p>
+                <button className="btn-gold mt-6" onClick={() => nav("/login")}><Ic n="shield" />{tt("Explore role permissions")}</button>
               </div>
               <div className="flex flex-wrap gap-2.5">
                 {roles.map((r, i) => (
@@ -240,11 +243,11 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
       <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
         <Reveal>
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <div className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold-600 dark:text-gold-400">Pricing</div>
-            <h2 className="font-display text-[32px] sm:text-[40px] font-bold tracking-tight mt-2">Plans that scale with your school</h2>
-            <p className="text-ink-400 text-[14.5px] mt-3">Prices, limits and features are fully editable by the platform owner — in any currency.</p>
+            <div className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold-600 dark:text-gold-400">{tt("Pricing")}</div>
+            <h2 className="font-display text-[32px] sm:text-[40px] font-bold tracking-tight mt-2">{tt("Plans that scale with your school")}</h2>
+            <p className="text-ink-400 text-[14.5px] mt-3">{tt("Prices, limits and features are fully editable by the platform owner — in any currency.")}</p>
             <div className="flex items-center justify-center gap-2 flex-wrap mt-5">
-              <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400">Show prices in</span>
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400">{tt("Show prices in")}</span>
               {["USD", "EUR", "RWF", "KES", "XAF", "NGN"].map((cc) => (
                 <button key={cc} onClick={() => setPriceCur(cc)}
                   className={`chip cursor-pointer !py-1.5 !px-3 transition-all ${priceCur === cc ? "bg-ink-950 text-white dark:bg-ink-100 dark:text-ink-900 shadow-panel" : "bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-300 hover:bg-cobalt-100 dark:hover:bg-cobalt-500/15"}`}>
@@ -252,27 +255,27 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
                 </button>
               ))}
             </div>
-            {priceCur !== "USD" && <div className="chip bg-gold-100 text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 font-mono mx-auto mt-3 !py-1.5">{fxRateLabel("USD", priceCur)} · converted automatically</div>}
+            {priceCur !== "USD" && <div className="chip bg-gold-100 text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 font-mono mx-auto mt-3 !py-1.5">{fxRateLabel("USD", priceCur)} · {tt("converted automatically")}</div>}
           </div>
         </Reveal>
         <div className="grid md:grid-cols-3 gap-5 items-stretch">
           {plans.map((p, i) => (
             <Reveal key={p.id} delay={i * 90}>
               <div className={`panel p-7 h-full flex flex-col relative ${p.highlight ? "!bg-ink-950 !text-ink-100 !border-cobalt-700 shadow-pop md:-translate-y-3" : "hover:shadow-lift hover:-translate-y-1 transition-all duration-200"}`}>
-                {p.highlight && <span className="absolute -top-3 left-6 chip bg-gold-400 text-ink-950 !px-3 !py-1">Most popular</span>}
+                {p.highlight && <span className="absolute -top-3 left-6 chip bg-gold-400 text-ink-950 !px-3 !py-1">{tt("Most popular")}</span>}
                 <h3 className="font-display font-bold text-[20px]">{p.name}</h3>
                 <div className="mt-3 flex items-baseline gap-1.5 flex-wrap">
                   <span className="font-display text-[42px] font-bold tnum leading-none">{fmtMoneyConv(p.price, "USD", priceCur)}</span>
-                  <span className="text-[13px] font-semibold text-ink-400">{p.period}</span>
+                  <span className="text-[13px] font-semibold text-ink-400">{tt(p.period)}</span>
                 </div>
                 {priceCur !== "USD" && <div className={`text-[11.5px] font-bold tnum mt-1 ${p.highlight ? "text-ink-400" : "text-ink-300"}`}>≈ ${p.price} USD</div>}
                 <div className={`text-[12.5px] font-bold mt-2 ${p.highlight ? "text-gold-400" : "text-cobalt-600 dark:text-cobalt-400"}`}>
-                  {p.students === "Unlimited" ? "Unlimited students" : `Up to ${fmtNum(p.students)} students`} · {p.teachers === "Unlimited" ? "unlimited teachers" : `${p.teachers} teachers`} · {p.storage}
+                  {p.students === "Unlimited" ? tt("Unlimited students") : `${tt("Up to")} ${fmtNum(p.students)} ${tt("students")}`} · {p.teachers === "Unlimited" ? tt("unlimited teachers") : `${p.teachers} ${tt("teachers")}`} · {p.storage}
                 </div>
                 <ul className="mt-5 space-y-2.5 text-[13.5px] flex-1">
                   {p.features.map((f) => <li key={f} className="flex gap-2.5"><Ic n="check" size={15} sw={2.6} className={p.highlight ? "text-gold-400" : "text-emerald-500"} />{f}</li>)}
                 </ul>
-                <button className={`mt-6 ${p.highlight ? "btn-gold" : "btn-p"} w-full`} onClick={() => nav("/register")}>{i === 0 ? "Start free trial" : i === 1 ? "Start 14-day trial" : "Contact sales"}</button>
+                <button className={`mt-6 ${p.highlight ? "btn-gold" : "btn-p"} w-full`} onClick={() => nav("/register")}>{i === 0 ? tt("Start free trial") : i === 1 ? tt("Start 14-day trial") : tt("Contact sales")}</button>
               </div>
             </Reveal>
           ))}
@@ -284,11 +287,11 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
         <Reveal>
           <div className="panel !rounded-2xl overflow-hidden grid lg:grid-cols-2">
             <div className="p-8 sm:p-10">
-              <div className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold-600 dark:text-gold-400">Security first</div>
-              <h2 className="font-display text-[28px] sm:text-[34px] font-bold tracking-tight mt-2">Built to protect your school's data</h2>
+              <div className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold-600 dark:text-gold-400">{tt("Security first")}</div>
+              <h2 className="font-display text-[28px] sm:text-[34px] font-bold tracking-tight mt-2">{tt("Built to protect your school's data")}</h2>
               <div className="grid sm:grid-cols-2 gap-x-6 gap-y-4 mt-6 text-[13.5px]">
                 {["Hashed passwords & 2FA", "Granular RBAC permissions", "Full audit trail with IP & device", "Automatic nightly backups", "Rate limiting & account lockout", "White-label & multi-tenant"].map((x) => (
-                  <span key={x} className="flex gap-2.5 items-start"><span className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5"><Ic n="shield" size={13} /></span><b>{x}</b></span>
+                  <span key={x} className="flex gap-2.5 items-start"><span className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5"><Ic n="shield" size={13} /></span><b>{tt(x)}</b></span>
                 ))}
               </div>
             </div>
@@ -309,24 +312,24 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
       <section className="bg-ink-950 text-ink-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 grid lg:grid-cols-[1fr_auto] items-center gap-8">
           <div>
-            <h2 className="font-display text-[30px] sm:text-[38px] font-bold tracking-tight">Ready to run your school on VITECH?</h2>
-            <p className="text-ink-300 mt-2 text-[15px]">Deploy in minutes. Import your students from Excel. Go paperless this term.</p>
+            <h2 className="font-display text-[30px] sm:text-[38px] font-bold tracking-tight">{tt("Ready to run your school on VITECH?")}</h2>
+            <p className="text-ink-300 mt-2 text-[15px]">{tt("Deploy in minutes. Import your students from Excel. Go paperless this term.")}</p>
           </div>
           <div className="flex gap-3">
-            <button className="btn-gold !h-12 !px-7" onClick={() => nav("/register")}>Create your school</button>
-            <button className="btn-o !h-12 !px-6 !border-ink-700 !bg-transparent !text-ink-100" onClick={() => nav("/verify")}>Verify a certificate</button>
+            <button className="btn-gold !h-12 !px-7" onClick={() => nav("/register")}>{tt("Create your school")}</button>
+            <button className="btn-o !h-12 !px-6 !border-ink-700 !bg-transparent !text-ink-100" onClick={() => nav("/verify")}>{tt("Verify a certificate")}</button>
           </div>
         </div>
         <div className="border-t border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-ink-400">
             <div className="flex items-center gap-2.5">
               <span className="w-7 h-7 rounded-md bg-gold-400 text-ink-950 flex items-center justify-center font-display font-bold text-sm">V</span>
-              <span>© 2026 VITECH School Management System — white-label ready</span>
+              <span>© 2026 VITECH School Management System — {tt("white-label ready")}</span>
             </div>
             <div className="flex gap-5 font-semibold">
-              <button className="hover:text-white transition-colors cursor-pointer" onClick={() => nav("/login")}>Login</button>
-              <button className="hover:text-white transition-colors cursor-pointer" onClick={() => nav("/verify")}>Verify certificate</button>
-              <button className="hover:text-white transition-colors cursor-pointer" onClick={() => nav("/register")}>Pricing</button>
+              <button className="hover:text-white transition-colors cursor-pointer" onClick={() => nav("/login")}>{tt("Login")}</button>
+              <button className="hover:text-white transition-colors cursor-pointer" onClick={() => nav("/verify")}>{tt("Verify certificate")}</button>
+              <button className="hover:text-white transition-colors cursor-pointer" onClick={() => nav("/register")}>{tt("Pricing")}</button>
             </div>
           </div>
         </div>

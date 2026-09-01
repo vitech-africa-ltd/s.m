@@ -68,9 +68,12 @@ export const hashStr = (s: string) => { let h = 2166136261; for (let i = 0; i < 
 export const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 export const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 export const daysAhead = (n: number) => daysAgo(-n);
-export const fmtDate = (iso: string) => { const d = new Date(iso + "T12:00:00"); return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); };
-export const fmtDateShort = (iso: string) => { const d = new Date(iso + "T12:00:00"); return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }); };
-export const monthLabel = (key: string) => { const d = new Date(key + "-15T12:00:00"); return d.toLocaleDateString("en-GB", { month: "short" }); };
+const LOCALES: Record<string, string> = { en: "en-GB", fr: "fr-FR", rw: "rw-RW", sw: "sw-KE" };
+export const uiLocale = () => LOCALES[(state as AppState | null)?.prefs.lang ?? "en"] ?? "en-GB";
+const dOf = (iso: string) => new Date(iso.includes("T") || iso.includes(" ") ? iso : iso + "T12:00:00");
+export const fmtDate = (iso: string) => dOf(iso).toLocaleDateString(uiLocale(), { day: "2-digit", month: "short", year: "numeric" });
+export const fmtDateShort = (iso: string) => dOf(iso).toLocaleDateString(uiLocale(), { day: "2-digit", month: "short" });
+export const monthLabel = (key: string) => new Date(key + "-15T12:00:00").toLocaleDateString(uiLocale(), { month: "short" });
 /* ============================== Currencies & FX ============================== */
 export interface CurrencyDef { code: string; name: string; symbol: string; rate: number; flag: string; }
 export const CURRENCIES: CurrencyDef[] = [
@@ -103,7 +106,7 @@ export const fxRateLabel = (from: string, to: string) => {
 const roundSmart = (v: number, rate: number) => (rate >= 500 ? Math.round(v / 100) * 100 : rate >= 50 ? Math.round(v / 10) * 10 : Math.round(v * 100) / 100);
 export const fmtMoney = (n: number, cur: string) => {
   const c = CURRENCY_MAP[cur];
-  const num = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(n));
+  const num = new Intl.NumberFormat(uiLocale(), { maximumFractionDigits: 0 }).format(Math.round(n));
   return c ? `${c.symbol} ${num}` : `${num} ${cur}`;
 };
 export const fmtMoneyConv = (v: number, from: string, to: string) => {
