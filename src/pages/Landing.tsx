@@ -82,6 +82,9 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
   const lang = s.prefs.lang;
   const tt = useT();
   const [priceCur, setPriceCur] = useState("USD");
+  const [menuOpen, setMenuOpen] = useState(false);
+  /* hash is used by the router — anchors must scroll via JS instead */
+  const goTo = (id: string) => { setMenuOpen(false); document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   const [navScrolled, setNavScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setNavScrolled(window.scrollY > 14);
@@ -116,10 +119,10 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
             <span className="hidden xs:inline sm:inline font-display font-bold text-[15px] sm:text-[17px] tracking-tight truncate">VITECH <span className="text-cobalt-600 dark:text-cobalt-400">School</span></span>
           </button>
           <nav className="hidden lg:flex items-center gap-6 text-[13.5px] font-semibold text-ink-500 dark:text-ink-300">
-            <a href="#features" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Features")}</a>
-            <a href="#roles" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Roles")}</a>
-            <a href="#pricing" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Pricing")}</a>
-            <a href="#security" className="hover:text-ink-900 dark:hover:text-white transition-colors">{tt("Security")}</a>
+            <button onClick={() => goTo("features")} className="hover:text-ink-900 dark:hover:text-white transition-colors cursor-pointer">{tt("Features")}</button>
+            <button onClick={() => goTo("roles")} className="hover:text-ink-900 dark:hover:text-white transition-colors cursor-pointer">{tt("Roles")}</button>
+            <button onClick={() => goTo("pricing")} className="hover:text-ink-900 dark:hover:text-white transition-colors cursor-pointer">{tt("Pricing")}</button>
+            <button onClick={() => goTo("security")} className="hover:text-ink-900 dark:hover:text-white transition-colors cursor-pointer">{tt("Security")}</button>
             <button onClick={() => nav("/download")} className="flex items-center gap-1.5 font-bold text-cobalt-700 dark:text-cobalt-300 hover:text-gold-600 dark:hover:text-gold-300 transition-colors cursor-pointer">
               <Ic n="download" size={15} />{tt("Desktop app")}
             </button>
@@ -130,8 +133,32 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
             </select>
             <button className="btn-o btn-sm hidden md:inline-flex" onClick={() => nav("/login")}>{tt("Login")}</button>
             <button className="btn-p !h-8 sm:!h-9 !px-3 sm:!px-4 !text-[12.5px] sm:!text-sm" onClick={() => nav("/register")}>{tt("Get Started")}</button>
+            <button className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center text-ink-600 dark:text-ink-200 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors cursor-pointer" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu" aria-expanded={menuOpen}>
+              <Ic n={menuOpen ? "x" : "menu"} size={19} />
+            </button>
           </div>
         </div>
+        {/* mobile menu */}
+        {menuOpen && (
+          <div className="lg:hidden border-t border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-lift pop-in">
+            <nav className="max-w-7xl mx-auto px-4 py-3 flex flex-col" aria-label="Mobile">
+              {[["features", "Features", "sparkles"], ["roles", "Roles", "idcard"], ["pricing", "Pricing", "coins"], ["security", "Security", "shield"]].map(([id, label, ic]) => (
+                <button key={id} onClick={() => goTo(id)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-[14.5px] font-bold text-ink-700 dark:text-ink-100 hover:bg-cobalt-50 dark:hover:bg-cobalt-500/10 hover:text-cobalt-700 dark:hover:text-cobalt-300 transition-colors cursor-pointer text-left">
+                  <Ic n={ic} size={17} className="text-ink-400" />{tt(label)}
+                </button>
+              ))}
+              <button onClick={() => { setMenuOpen(false); nav("/download"); }}
+                className="flex items-center gap-3 px-3 py-3 rounded-lg text-[14.5px] font-bold text-cobalt-700 dark:text-cobalt-300 hover:bg-cobalt-50 dark:hover:bg-cobalt-500/10 transition-colors cursor-pointer text-left">
+                <Ic n="download" size={17} />{tt("Desktop app")}
+              </button>
+              <div className="flex gap-2 mt-2 pt-3 border-t border-ink-100 dark:border-ink-800">
+                <button className="btn-o flex-1" onClick={() => nav("/login")}>{tt("Login")}</button>
+                <button className="btn-p flex-1" onClick={() => nav("/register")}>{tt("Get Started")}</button>
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* hero */}

@@ -202,7 +202,7 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
             <Reveal delay={210}>
               <div className="flex flex-wrap items-center gap-3 mt-7">
                 <DBtn os={detected} big />
-                <a href="#platforms" className="btn-o !h-12 !px-5 !border-ink-700 !bg-transparent !text-ink-100 hover:!border-gold-400 hover:!text-gold-300">{tt("Other platforms")}<Ic n="chevD" size={15} /></a>
+                <button onClick={() => document.getElementById("platforms")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="btn-o !h-12 !px-5 !border-ink-700 !bg-transparent !text-ink-100 hover:!border-gold-400 hover:!text-gold-300">{tt("Other platforms")}<Ic n="chevD" size={15} /></button>
                 {deferred && <button className="btn-g !h-12 !text-ink-200" onClick={() => void pwaInstall()}><Ic n="sparkles" size={16} />{tt("Install as app")}</button>}
               </div>
             </Reveal>

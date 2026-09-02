@@ -123,7 +123,7 @@ function Bell({ nav }: { nav: (to: string) => void }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-11 z-50 w-[340px] panel pop-in shadow-pop overflow-hidden">
+          <div className="fixed inset-x-3 top-[64px] sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-[340px] z-50 panel pop-in shadow-pop overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-ink-100 dark:border-ink-800">
               <b className="font-display text-[15px]">{tt("Notifications")}</b>
               <button className="text-[12px] font-bold text-cobalt-600 dark:text-cobalt-400 hover:underline cursor-pointer" onClick={() => mutate((db) => db.notifications.forEach((n) => (n.read = true)))}>{tt("Mark all read")}</button>
@@ -328,7 +328,7 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
               {userMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setUserMenu(false)} />
-                  <div className="absolute right-0 top-12 z-50 w-56 panel pop-in shadow-pop overflow-hidden py-1.5">
+                  <div className="fixed inset-x-3 top-[64px] sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-56 z-50 panel pop-in shadow-pop overflow-hidden py-1.5">
                     <div className="px-4 py-2.5 border-b border-ink-100 dark:border-ink-800">
                       <div className="text-[13px] font-bold">{user?.name}</div>
                       <div className="text-[11.5px] text-ink-400">{user?.email}</div>
