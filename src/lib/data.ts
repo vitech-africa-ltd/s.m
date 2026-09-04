@@ -148,7 +148,7 @@ export const todayISO = () => new Date().toISOString().slice(0, 10);
 export const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
 export const daysAhead = (n: number) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
 const LOCALES: Record<string, string> = { en: "en-GB", fr: "fr-FR", es: "es-ES", pt: "pt-PT", ar: "ar" };
-export const uiLocale = () => LOCALES[state.prefs.lang] ?? "en-GB";
+export const uiLocale = () => { try { return LOCALES[state.prefs.lang] ?? "en-GB"; } catch { return "en-GB"; } };
 export const fmtDate = (iso: string) => new Date(iso + (iso.length === 10 ? "T12:00:00" : "")).toLocaleDateString(uiLocale(), { day: "numeric", month: "short", year: "numeric" });
 export const fmtDateShort = (iso: string) => new Date(iso + "T12:00:00").toLocaleDateString(uiLocale(), { day: "numeric", month: "short" });
 export const fmtNum = (n: number) => new Intl.NumberFormat(uiLocale()).format(n);
@@ -220,6 +220,21 @@ const SUBJECTS_DEF: [string, string, number, number[]][] = [
   ["Entrepreneurship", "ENT", 2, [4, 5, 6]], ["Physical Education", "PE", 1, [1, 2, 3]], ["Fine Arts", "ART", 1, [1, 2, 3]],
 ];
 const EXP_CATS = ["Salaries", "Electricity", "Internet", "Rent", "Maintenance", "Supplies", "Transport", "Equipment", "Other"];
+
+/* date helpers used during seeding — must be defined before seed() */
+export const monthKeys = (n: number) => {
+  const out: string[] = [];
+  const d = new Date();
+  for (let i = n - 1; i >= 0; i--) { const m = new Date(d.getFullYear(), d.getMonth() - i, 1); out.push(`${m.getFullYear()}-${pad(m.getMonth() + 1)}`); }
+  return out;
+};
+export const monthLabel = (m: string) => new Date(m + "-15T12:00:00").toLocaleDateString(uiLocale(), { month: "short" });
+export const lastSchoolDays = (n: number) => {
+  const out: string[] = [];
+  const d = new Date();
+  while (out.length < n) { const dow = d.getDay(); if (dow !== 0 && dow !== 6) out.push(d.toISOString().slice(0, 10)); d.setDate(d.getDate() - 1); }
+  return out.reverse();
+};
 
 /* ---------- store ---------- */
 const KEY = "vitech-state-v1";
@@ -505,19 +520,6 @@ export function logComm(channel: string, to: string, body: string) {
   persist(); emit();
 }
 
-export const monthKeys = (n: number) => {
-  const out: string[] = [];
-  const d = new Date();
-  for (let i = n - 1; i >= 0; i--) { const m = new Date(d.getFullYear(), d.getMonth() - i, 1); out.push(`${m.getFullYear()}-${pad(m.getMonth() + 1)}`); }
-  return out;
-};
-export const monthLabel = (m: string) => new Date(m + "-15T12:00:00").toLocaleDateString(uiLocale(), { month: "short" });
-export const lastSchoolDays = (n: number) => {
-  const out: string[] = [];
-  const d = new Date();
-  while (out.length < n) { const dow = d.getDay(); if (dow !== 0 && dow !== 6) out.push(d.toISOString().slice(0, 10)); d.setDate(d.getDate() - 1); }
-  return out.reverse();
-};
 const hash01 = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 1000) / 1000; };
 export const attStatus = (db: DB, date: string, studentId: string): string =>
   db.attendanceOverrides[`${date}:${studentId}`] ?? (hash01(date + studentId) < 0.9 ? "P" : hash01(studentId + date) < 0.5 ? "L" : "A");
