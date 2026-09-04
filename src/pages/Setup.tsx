@@ -52,7 +52,7 @@ export default function SetupPage({ nav }: { nav: (to: string) => void }) {
         const cls = d.classes;
         Array.from({ length: nStudents }, (_, i) => {
           const c = cls[i % cls.length];
-          d.students.push({ id: uid(), regNo: `${d.school.regPrefix}-${String(d.students.length + i + 1).padStart(4, "0")}`, first: FN[(i * 7 + 2) % FN.length], last: LN[(i * 11 + 3) % LN.length], gender: i % 2 ? "F" : "M", dob: `${2010 - (i % 6)}-0${(i % 8) + 1}-15`, nationality: school.country, phone: "", email: "", address: "", prevSchool: "", admitted: daysAgo(i % 60), classId: c.id, status: "active", parent: { name: `${LN[(i * 13 + 1) % LN.length]} Family`, relation: i % 2 ? "Mother" : "Father", phone: `+250 72${i % 9} 000 000`, email: "", occupation: "", emergency: "" }, hue: (i * 61) % 360, ability: 50 + ((i * 17) % 45) });
+          d.students.push({ id: uid(), regNo: `${d.school.regPrefix}-${String(d.students.length + i + 1).padStart(4, "0")}`, first: FN[(i * 7 + 2) % FN.length], last: LN[(i * 11 + 3) % LN.length], gender: i % 2 ? "F" : "M", dob: `${2010 - (i % 6)}-0${(i % 8) + 1}-15`, nationality: school.country, phone: "", email: "", address: "", prevSchool: "", admitted: daysAgo(i % 60), classId: c.id, status: "active", parent: { name: `${LN[(i * 13 + 1) % LN.length]} Family`, relation: i % 2 ? "Mother" : "Father", phone: `+250 72${i % 9} 000 000`, email: "", occupation: "", emergency: "" }, hue: (i * 61) % 360 });
         });
       });
       audit("SETUP_STUDENTS", "Student", `${nStudents} students imported`);

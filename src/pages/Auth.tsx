@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useApp, setSession, mutate, audit, uid, todayISO, COUNTRIES, CURRENCY_MAP, campusesFor, getState } from "../lib/data";
+import { useApp, setSession, setPrefs, mutate, audit, uid, todayISO, COUNTRIES, CURRENCY_MAP, campusesFor, getState } from "../lib/data";
 import { Ic } from "../components/icons";
 import { toast, Field } from "../components/ui";
 import { useT, LANGS } from "../lib/i18n";
@@ -21,7 +21,7 @@ function Shell({ nav, title, sub, children }: { nav: (to: string) => void; title
       <header className="max-w-7xl w-full mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
         <Brand nav={nav} />
         <div className="flex items-center gap-2">
-          <select className="input !w-auto !h-8 !text-[12px] font-bold" value={s.prefs.lang} onChange={(e) => { const lang = e.target.value as typeof s.prefs.lang; LANGS.some((l) => l.code === lang) && (document.documentElement.lang = lang); import("../lib/data").then((m) => m.setPrefs({ lang })); }} aria-label={tt("Language")}>
+          <select className="input !w-auto !h-8 !text-[12px] font-bold" value={s.prefs.lang} onChange={(e) => { const lang = e.target.value as typeof s.prefs.lang; LANGS.some((l) => l.code === lang) && (document.documentElement.lang = lang); setPrefs({ lang }); }} aria-label={tt("Language")}>
             {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
           </select>
           <button className="btn-o btn-sm hidden sm:inline-flex" onClick={() => nav("/")}><Ic n="chevL" size={14} />{tt("Back")}</button>

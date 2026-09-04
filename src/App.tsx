@@ -18,6 +18,8 @@ import CalendarPage from "./pages/CalendarPage";
 import SettingsPage from "./pages/SettingsPage";
 import { LibraryPage, TransportPage, HRPage, DocumentsPage, CertificatesPage, VerifyPage, IDCardsPage, AuditPage, BackupsPage, AnalyticsPage, PlatformPage } from "./pages/More";
 import { StudentPortal, ParentPortal, TeacherPortal } from "./pages/Portals";
+import HelpPage from "./pages/Help";
+import SetupPage from "./pages/Setup";
 
 const useHash = () => {
   const [h, setH] = useState(window.location.hash.slice(1) || "/");
@@ -131,6 +133,8 @@ export default function App() {
       case "/app/analytics": return <AnalyticsPage />;
       case "/app/platform": return user.role === "super" ? <PlatformPage /> : <ErrorPage code="403" title="Super Admin only" body="The platform control panel is reserved for the SaaS owner." nav={nav} />;
       case "/app/settings": return <SettingsPage />;
+      case "/app/help": return <HelpPage />;
+      case "/app/setup": return user.role === "super" || user.role === "admin" ? <SetupPage nav={nav} /> : <ErrorPage code="403" title="Administrators only" body="The setup wizard is reserved for school administrators." nav={nav} />;
       default: return <ErrorPage code="404" title="Page not found" body="The page you are looking for doesn't exist or was moved." nav={nav} />;
     }
   })();
