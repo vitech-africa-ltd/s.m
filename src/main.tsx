@@ -15,8 +15,17 @@ if (rootEl) {
   );
 }
 
-if (import.meta.env.PROD && "serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
-  });
+if (import.meta.env.PROD) {
+  /* Purge stale service-worker caches so a fresh deploy is always served. */
+  if ("caches" in window) {
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("vitech-school-") && k !== "vitech-school-v3").map((k) => caches.delete(k))))
+      .catch(() => {});
+  }
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+  }
 }
