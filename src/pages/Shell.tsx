@@ -102,7 +102,7 @@ function Bell({ nav }: { nav: (to: string) => void }) {
   const icons: Record<string, string> = { payment: "payment", fee: "alert", absent: "sms", admission: "userplus", exam: "exams", system: "info", grade: "grades" };
   return (
     <div className="relative">
-      <button className="btn-g !px-2.5 relative" onClick={() => setOpen(!open)} aria-label={tt("Notifications")}>
+      <button className="w-10 h-10 lg:w-9 lg:h-9 rounded-xl lg:rounded-lg flex items-center justify-center text-ink-500 dark:text-ink-300 hover:bg-ink-100/80 dark:hover:bg-ink-800 hover:text-cobalt-600 dark:hover:text-cobalt-300 active:scale-90 transition-all cursor-pointer relative" onClick={() => setOpen(!open)} aria-label={tt("Notifications")}>
         <Ic n="bell" size={19} />
         {unread > 0 && <span className="absolute top-1 right-1 min-w-4 h-4 rounded-full bg-rose-500 text-white text-[9.5px] font-bold flex items-center justify-center px-1">{unread}</span>}
       </button>
@@ -338,29 +338,33 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
 
       {/* topbar */}
       <div className="lg:pl-[248px]">
-        <header className={`sticky top-0 z-50 h-14 lg:h-16 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 border-b transition-all duration-300 ${scrolled ? "bg-white/95 dark:bg-ink-900/95 backdrop-blur-md shadow-panel border-ink-200/70 dark:border-ink-800" : "bg-paper/85 dark:bg-ink-950/85 backdrop-blur border-ink-100 dark:border-ink-800"}`}>
-          <button className="lg:hidden btn-g !px-2" onClick={() => setDrawer(true)} aria-label="Open menu"><Ic n="menu" /></button>
+        <header className={`sticky top-0 z-50 h-14 lg:h-16 flex items-center gap-1 sm:gap-2 px-2.5 sm:px-5 border-b transition-all duration-300 ${scrolled ? "bg-white/95 dark:bg-ink-900/95 backdrop-blur-md shadow-panel border-ink-200/70 dark:border-ink-800" : "bg-paper/85 dark:bg-ink-950/85 backdrop-blur border-ink-100 dark:border-ink-800"}`}>
+          {/* hamburger — 44px touch target */}
+          <button className="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center text-ink-800 dark:text-ink-100 hover:bg-ink-100/80 dark:hover:bg-ink-800 active:scale-90 transition-all cursor-pointer shrink-0" onClick={() => setDrawer(true)} aria-label={tt("Menu")} aria-expanded={drawer}>
+            <Ic n="menu" size={20} />
+          </button>
 
-          {/* mobile identity — where am I? */}
-          <button onClick={() => nav("/app")} className="lg:hidden flex items-center gap-2 min-w-0 max-w-[42vw] cursor-pointer group" aria-label={tt("Dashboard")} title={tt(sectionLabel)}>
-            <span className="w-8 h-8 rounded-lg bg-ink-950 dark:bg-cobalt-600 text-gold-400 flex items-center justify-center font-display font-bold text-[14px] shrink-0 group-hover:scale-105 transition-transform">{(s.db.school.logoText || "V")[0]}</span>
-            <span className="hidden min-[380px]:block min-w-0 text-left leading-tight">
-              <span className="block font-display font-bold text-[13px] sm:text-[13.5px] truncate group-hover:text-cobalt-700 dark:group-hover:text-cobalt-300 transition-colors">{tt(sectionLabel)}</span>
-              <span className="hidden min-[440px]:block text-[9.5px] font-extrabold uppercase tracking-[0.1em] text-ink-400 truncate">{s.db.school.short} · {s.db.school.term}</span>
+          {/* identity — takes remaining space on mobile, never overflows */}
+          <button onClick={() => nav("/app")} className="lg:hidden flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer group" aria-label={tt("Dashboard")} title={tt(sectionLabel)}>
+            <span className="w-9 h-9 rounded-xl bg-ink-950 dark:bg-cobalt-600 text-gold-400 flex items-center justify-center font-display font-bold text-[15px] shrink-0 shadow-panel group-active:scale-95 transition-transform">{(s.db.school.logoText || "V")[0]}</span>
+            <span className="min-w-0 text-left leading-tight">
+              <span className="block font-display font-bold text-[14px] truncate group-hover:text-cobalt-700 dark:group-hover:text-cobalt-300 transition-colors">{tt(sectionLabel)}</span>
+              <span className="hidden min-[400px]:block text-[9.5px] font-extrabold uppercase tracking-[0.12em] text-ink-400 truncate">{s.db.school.short} · {s.db.school.term}</span>
             </span>
           </button>
 
-          {/* search */}
-          <button onClick={() => setSearch(true)} aria-label={tt("Search anything…")} title={`${tt("Search anything…")} (Ctrl+K)`}
-            className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center text-ink-500 dark:text-ink-300 hover:bg-ink-100/80 dark:hover:bg-ink-800 hover:text-cobalt-600 dark:hover:text-cobalt-300 transition-colors cursor-pointer">
-            <Ic n="search" size={17} />
-          </button>
+          {/* search pill — desktop */}
           <button onClick={() => setSearch(true)} className="hidden lg:flex items-center gap-2.5 h-10 px-3.5 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 text-[13px] font-semibold text-ink-400 hover:border-cobalt-400 hover:shadow-panel transition-all cursor-pointer w-64 xl:w-80">
             <Ic n="search" size={16} /><span className="truncate">{tt("Search anything…")}</span>
             <span className="ml-auto flex gap-1"><span className="kbd">Ctrl</span><span className="kbd">K</span></span>
           </button>
 
-          <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
+          <div className="flex items-center gap-0.5 lg:ml-auto">
+            {/* search icon — mobile only, 44px target */}
+            <button onClick={() => setSearch(true)} aria-label={tt("Search anything…")} title={`${tt("Search anything…")} (Ctrl+K)`}
+              className="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center text-ink-500 dark:text-ink-300 hover:bg-ink-100/80 dark:hover:bg-ink-800 hover:text-cobalt-600 dark:hover:text-cobalt-300 active:scale-90 transition-all cursor-pointer">
+              <Ic n="search" size={18} />
+            </button>
             <span className="hidden xl:inline-flex"><CurrencySwitch /></span>
             <button onClick={toggleMT} aria-label={tt("AI translation")} title={`${tt("AI translation")} — ${mtOn ? "ON" : "OFF"}`}
               className={`hidden md:flex w-9 h-9 rounded-lg items-center justify-center transition-all cursor-pointer ${mtOn ? "bg-gold-100 dark:bg-gold-500/15 text-gold-600 dark:text-gold-300 shadow-[inset_0_0_0_1px_rgb(220_166_56/.4)]" : "text-ink-300 hover:bg-ink-100/80 dark:hover:bg-ink-800"}`}>
@@ -369,19 +373,19 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
             <select className="input !w-auto !h-9 !text-[12px] font-bold hidden md:block" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
               {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
             </select>
-            <button className="w-9 h-9 rounded-lg flex items-center justify-center text-ink-500 dark:text-ink-300 hover:bg-ink-100/80 dark:hover:bg-ink-800 hover:text-cobalt-600 dark:hover:text-cobalt-300 transition-colors cursor-pointer" onClick={() => setPrefs({ theme: s.prefs.theme === "dark" ? "light" : "dark" })} aria-label="Toggle dark mode" title={s.prefs.theme === "dark" ? "Light mode" : "Dark mode"}>
+            <button className="hidden md:flex w-9 h-9 rounded-lg items-center justify-center text-ink-500 dark:text-ink-300 hover:bg-ink-100/80 dark:hover:bg-ink-800 hover:text-cobalt-600 dark:hover:text-cobalt-300 transition-colors cursor-pointer" onClick={() => setPrefs({ theme: s.prefs.theme === "dark" ? "light" : "dark" })} aria-label="Toggle dark mode" title={s.prefs.theme === "dark" ? "Light mode" : "Dark mode"}>
               <Ic n={s.prefs.theme === "dark" ? "sun" : "moon"} size={17} />
             </button>
             <Bell nav={nav} />
             <span className="hidden sm:block w-px h-6 bg-ink-200 dark:bg-ink-700 mx-1" aria-hidden="true" />
             <div className="relative">
-              <button className="flex items-center gap-2 pl-1 pr-1.5 h-11 rounded-lg hover:bg-ink-100/70 dark:hover:bg-ink-800 transition-colors cursor-pointer" onClick={() => setUserMenu(!userMenu)} aria-label="User menu">
+              <button className="flex items-center gap-2 p-1 lg:pl-1 lg:pr-1.5 h-11 rounded-xl hover:bg-ink-100/70 dark:hover:bg-ink-800 active:scale-95 transition-all cursor-pointer" onClick={() => setUserMenu(!userMenu)} aria-label="User menu">
                 {user && <Avatar first={user.name.split(" ")[0]} last={user.name.split(" ")[1] ?? "V"} hue={user.hue} size={32} />}
                 <span className="hidden xl:block text-left leading-tight">
                   <span className="block text-[12.5px] font-bold">{user?.name}</span>
                   <span className="block text-[10.5px] font-bold uppercase tracking-wide text-ink-400">{user?.role}</span>
                 </span>
-                <Ic n="chevD" size={13} className={`text-ink-400 transition-transform duration-200 ${userMenu ? "rotate-180" : ""}`} />
+                <Ic n="chevD" size={13} className={`hidden sm:block text-ink-400 transition-transform duration-200 ${userMenu ? "rotate-180" : ""}`} />
               </button>
               {userMenu && (
                 <>
