@@ -6,9 +6,9 @@ import { useT, LANGS } from "../lib/i18n";
 
 function Brand({ nav }: { nav: (to: string) => void }) {
   return (
-    <button onClick={() => nav("/")} className="flex items-center gap-2.5 cursor-pointer group">
-      <span className="w-9 h-9 rounded-lg bg-ink-950 dark:bg-cobalt-600 flex items-center justify-center text-gold-400 font-display font-bold text-lg group-hover:scale-105 transition-transform">V</span>
-      <span className="font-display font-bold text-[16px]">VITECH <span className="text-cobalt-600 dark:text-cobalt-400">School</span></span>
+    <button onClick={() => nav("/")} className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group min-w-0">
+      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-ink-950 dark:bg-cobalt-600 flex items-center justify-center text-gold-400 font-display font-bold text-base sm:text-lg group-hover:scale-105 transition-transform shrink-0">V</span>
+      <span className="font-display font-bold text-[14.5px] sm:text-[16px] whitespace-nowrap hidden min-[380px]:block">VITECH <span className="text-cobalt-600 dark:text-cobalt-400">School</span></span>
     </button>
   );
 }
@@ -21,9 +21,12 @@ function Shell({ nav, title, sub, children }: { nav: (to: string) => void; title
       <header className="max-w-7xl w-full mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
         <Brand nav={nav} />
         <div className="flex items-center gap-2">
-          <select className="input !w-auto !h-8 !text-[12px] font-bold" value={s.prefs.lang} onChange={(e) => { const lang = e.target.value as typeof s.prefs.lang; LANGS.some((l) => l.code === lang) && (document.documentElement.lang = lang); setPrefs({ lang }); }} aria-label={tt("Language")}>
-            {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
-          </select>
+          <label className="flex items-center gap-1.5 h-8 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 pl-2.5 pr-1.5 cursor-pointer hover:border-cobalt-400 transition-colors">
+            <Ic n="globe" size={14} className="text-cobalt-600 dark:text-cobalt-400 shrink-0" />
+            <select className="bg-transparent border-0 outline-none text-[11.5px] font-bold text-ink-700 dark:text-ink-100 cursor-pointer max-w-[84px] truncate pr-0.5" value={s.prefs.lang} onChange={(e) => { const lang = e.target.value as typeof s.prefs.lang; LANGS.some((l) => l.code === lang) && (document.documentElement.lang = lang); setPrefs({ lang }); }} aria-label={tt("Language")}>
+              {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
+            </select>
+          </label>
           <button className="btn-o btn-sm hidden sm:inline-flex" onClick={() => nav("/")}><Ic n="chevL" size={14} />{tt("Back")}</button>
         </div>
       </header>

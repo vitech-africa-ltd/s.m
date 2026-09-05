@@ -118,10 +118,10 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
   return (
     <div className="min-h-screen bg-paper dark:bg-ink-950 text-ink-900 dark:text-ink-100">
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/95 dark:bg-ink-900/95 backdrop-blur-md shadow-panel" : "bg-paper/85 dark:bg-ink-950/85 backdrop-blur"}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center gap-3 sm:gap-5">
-          <button onClick={() => nav("/")} className="flex items-center gap-2.5 cursor-pointer group" aria-label="VITECH School">
-            <span className="w-9 h-9 rounded-lg bg-ink-950 dark:bg-cobalt-600 flex items-center justify-center text-gold-400 font-display font-bold text-lg group-hover:scale-105 transition-transform">V</span>
-            <span className="font-display font-bold text-[16px] sm:text-[17px] tracking-tight whitespace-nowrap">VITECH <span className="text-cobalt-600 dark:text-cobalt-400">School</span></span>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center gap-2 sm:gap-5">
+          <button onClick={() => nav("/")} className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group min-w-0 shrink" aria-label="VITECH School">
+            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-ink-950 dark:bg-cobalt-600 flex items-center justify-center text-gold-400 font-display font-bold text-base sm:text-lg group-hover:scale-105 transition-transform shrink-0">V</span>
+            <span className="font-display font-bold text-[14.5px] sm:text-[17px] tracking-tight whitespace-nowrap hidden min-[400px]:block truncate">VITECH <span className="text-cobalt-600 dark:text-cobalt-400">School</span></span>
           </button>
           <nav className="hidden lg:flex items-center gap-6 text-[13.5px] font-semibold text-ink-500 dark:text-ink-300">
             <button onClick={() => goTo("features")} className="hover:text-ink-900 dark:hover:text-white transition-colors cursor-pointer">{tt("Features")}</button>
@@ -132,13 +132,25 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
               <Ic n="download" size={15} />{tt("Desktop app")}
             </button>
           </nav>
-          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-            <select className="input !w-auto !h-8 sm:!h-9 !px-2 !text-[12px] font-semibold cursor-pointer" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
-              {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
-            </select>
-            <button className="btn-o btn-sm hidden md:inline-flex" onClick={() => nav("/login")}>{tt("Login")}</button>
-            <button className="btn-p !h-8 sm:!h-9 !px-3 sm:!px-4 !text-[12.5px] sm:!text-sm" onClick={() => nav("/register")}>{tt("Get Started")}</button>
-            <button className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center text-ink-600 dark:text-ink-200 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors cursor-pointer" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu" aria-expanded={menuOpen}>
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* language — compact pill with globe icon */}
+            <label className="flex items-center gap-1.5 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 pl-2.5 pr-1.5 cursor-pointer hover:border-cobalt-400 transition-colors focus-within:border-cobalt-500">
+              <Ic n="globe" size={15} className="text-cobalt-600 dark:text-cobalt-400 shrink-0" />
+              <select className="bg-transparent border-0 outline-none text-[11.5px] sm:text-[12.5px] font-bold text-ink-700 dark:text-ink-100 cursor-pointer max-w-[76px] sm:max-w-none truncate pr-0.5" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
+                {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
+              </select>
+            </label>
+            {/* login — icon on mobile, label on desktop */}
+            <button onClick={() => nav("/login")} aria-label={tt("Login")} title={tt("Login")}
+              className="md:hidden w-9 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 flex items-center justify-center text-ink-600 dark:text-ink-200 hover:border-cobalt-400 hover:text-cobalt-600 dark:hover:text-cobalt-300 transition-all active:scale-95 cursor-pointer">
+              <Ic n="user" size={16} />
+            </button>
+            <button className="btn-o btn-sm hidden md:inline-flex" onClick={() => nav("/login")}><Ic n="user" size={14} />{tt("Login")}</button>
+            {/* get started — icon + label, shrinks gracefully */}
+            <button onClick={() => nav("/register")} className="btn-p !h-9 sm:!h-10 !px-2.5 sm:!px-4 !text-[12px] sm:!text-sm !gap-1.5 min-w-0" aria-label={tt("Get Started")}>
+              <Ic n="zap" size={14} className="shrink-0" /><span className="truncate max-w-[86px] min-[420px]:max-w-none">{tt("Get Started")}</span>
+            </button>
+            <button className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center text-ink-600 dark:text-ink-200 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors active:scale-95 cursor-pointer" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu" aria-expanded={menuOpen}>
               <Ic n={menuOpen ? "x" : "menu"} size={19} />
             </button>
           </div>
@@ -155,8 +167,8 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
                 <Ic n="download" size={17} />{tt("Desktop app")}
               </button>
               <div className="flex gap-2 mt-2 pt-3 border-t border-ink-100 dark:border-ink-800">
-                <button className="btn-o flex-1" onClick={() => nav("/login")}>{tt("Login")}</button>
-                <button className="btn-p flex-1" onClick={() => nav("/register")}>{tt("Get Started")}</button>
+                <button className="btn-o flex-1" onClick={() => nav("/login")}><Ic n="user" size={15} />{tt("Login")}</button>
+                <button className="btn-p flex-1" onClick={() => nav("/register")}><Ic n="zap" size={15} />{tt("Get Started")}</button>
               </div>
             </nav>
           </div>
