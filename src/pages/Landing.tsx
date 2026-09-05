@@ -132,25 +132,27 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
               <Ic n="download" size={15} />{tt("Desktop app")}
             </button>
           </nav>
-          <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* language — compact pill with globe icon */}
-            <label className="flex items-center gap-1.5 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 pl-2.5 pr-1.5 cursor-pointer hover:border-cobalt-400 transition-colors focus-within:border-cobalt-500">
-              <Ic n="globe" size={15} className="text-cobalt-600 dark:text-cobalt-400 shrink-0" />
-              <select className="bg-transparent border-0 outline-none text-[11.5px] sm:text-[12.5px] font-bold text-ink-700 dark:text-ink-100 cursor-pointer max-w-[76px] sm:max-w-none truncate pr-0.5" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
-                {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
+          <div className="ml-auto flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* language — globe + compact code, native name on hover/focus */}
+            <label title={LANGS.find((l) => l.code === lang)?.native}
+              className="flex items-center gap-1 sm:gap-1.5 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 pl-2 sm:pl-2.5 pr-1.5 cursor-pointer hover:border-cobalt-400 transition-colors focus-within:border-cobalt-500">
+              <Ic n="globe" size={14} className="text-cobalt-600 dark:text-cobalt-400 shrink-0" />
+              <select className="bg-transparent border-0 outline-none text-[11.5px] sm:text-[12.5px] font-extrabold uppercase text-ink-700 dark:text-ink-100 cursor-pointer w-[34px] sm:w-[38px]" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
+                {LANGS.map((l) => <option key={l.code} value={l.code}>{l.code}</option>)}
               </select>
             </label>
             {/* login — icon on mobile, label on desktop */}
             <button onClick={() => nav("/login")} aria-label={tt("Login")} title={tt("Login")}
-              className="md:hidden w-9 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 flex items-center justify-center text-ink-600 dark:text-ink-200 hover:border-cobalt-400 hover:text-cobalt-600 dark:hover:text-cobalt-300 transition-all active:scale-95 cursor-pointer">
+              className="w-9 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 flex items-center justify-center text-ink-600 dark:text-ink-200 hover:border-cobalt-400 hover:text-cobalt-600 dark:hover:text-cobalt-300 transition-all active:scale-95 cursor-pointer md:hidden">
               <Ic n="user" size={16} />
             </button>
             <button className="btn-o btn-sm hidden md:inline-flex" onClick={() => nav("/login")}><Ic n="user" size={14} />{tt("Login")}</button>
-            {/* get started — icon + label, shrinks gracefully */}
-            <button onClick={() => nav("/register")} className="btn-p !h-9 sm:!h-10 !px-2.5 sm:!px-4 !text-[12px] sm:!text-sm !gap-1.5 min-w-0" aria-label={tt("Get Started")}>
-              <Ic n="zap" size={14} className="shrink-0" /><span className="truncate max-w-[86px] min-[420px]:max-w-none">{tt("Get Started")}</span>
+            {/* get started — icon-only below 400px, icon+label above */}
+            <button onClick={() => nav("/register")} aria-label={tt("Get Started")} title={tt("Get Started")}
+              className="btn-p !h-9 sm:!h-10 !px-2.5 min-[400px]:!px-3.5 sm:!px-4 !text-[12px] sm:!text-sm !gap-1.5">
+              <Ic n="zap" size={14} className="shrink-0" /><span className="hidden min-[400px]:inline truncate">{tt("Get Started")}</span>
             </button>
-            <button className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center text-ink-600 dark:text-ink-200 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors active:scale-95 cursor-pointer" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu" aria-expanded={menuOpen}>
+            <button className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center text-ink-600 dark:text-ink-200 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors active:scale-95 cursor-pointer" onClick={() => setMenuOpen(!menuOpen)} aria-label={tt("Menu")} aria-expanded={menuOpen}>
               <Ic n={menuOpen ? "x" : "menu"} size={19} />
             </button>
           </div>
