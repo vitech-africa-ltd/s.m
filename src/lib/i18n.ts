@@ -39,7 +39,7 @@ const fr: Dict = {
   "Everything a school runs on": "Tout ce qui fait vivre une école", "One platform. Every operation.": "Une plateforme. Toutes les opérations.",
   "Twelve connected modules replace the spreadsheets, paper registers and WhatsApp groups your school survives on today.": "Douze modules connectés remplacent les tableurs, registres papier et groupes WhatsApp sur lesquels votre école survit aujourd'hui.",
   "Student Management": "Gestion des étudiants", "Teacher Management": "Gestion des enseignants", "Attendance & Alerts": "Présences & alertes", "Grades & Report Cards": "Notes & bulletins",
-  "Classes & Timetable": "Classes & emploi du temps", "Fees & Payments": "Frais & paiements", "Parent Communication": "Communication parents", "Financial Reports": "Rapports financiers",
+  "Classes & Timetable": "Classes & emploi du temps", "Fees & Payments": "Frais & paiements", "Parent Communication": "Communication parents",
   "Documents & Certificates": "Documents & certificats", "Analytics & Insights": "Analytique & indicateurs", "Multi-campus Groups": "Groupes multi-campus", "Secure by Design": "Sécurité intégrée",
   "Get Started free": "Commencer gratuitement", "14-day free trial": "Essai gratuit de 14 jours", "No card required": "Aucune carte requise", "Multi-campus ready": "Prêt multi-campus",
   "Role-based access": "Accès par rôle", "A portal for every person in your school": "Un portail pour chaque personne de votre école",
