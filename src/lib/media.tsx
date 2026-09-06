@@ -18,7 +18,7 @@ export const PHOTOS = [
 ];
 
 /* ---- gallery health probe (reactive store) ---- */
-let galleryAlive = true; // optimistic until proven dead
+let galleryAlive = false; // pessimistic: initials by default, photos only once the host answers
 let galleryVersion = 0;
 let probed = false;
 const gSubs = new Set<() => void>();

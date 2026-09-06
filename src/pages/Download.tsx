@@ -168,13 +168,21 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
                       /* fall through to the classic download */
                     }
                   }
-                  /* Path 2 — classic anchor download (normal browsers / deployed site) */
+                  /* Path 2 — open the package in a NEW window via its data: URI.
+                     A fresh top-level window is never sandboxed, so the browser
+                     treats the application/zip data URI as a download even when
+                     the current preview frame blocks all file saves. */
+                  if (dataUri) {
+                    const win = window.open(dataUri, "_blank");
+                    if (win) { toast(`${tt("Download started")} — ${p.label}`, "ok"); return; }
+                  }
+                  /* Path 3 — classic anchor download (normal browsers / deployed site) */
                   const a = document.createElement("a");
-                  a.href = blobUrl; a.download = fileName;
+                  a.href = dataUri || blobUrl; a.download = fileName;
                   document.body.appendChild(a); a.click(); a.remove();
                   toast(`${tt("Download started")} — ${p.label}`, "ok");
                   if (sandboxed) {
-                    /* The sandbox almost certainly swallowed that click — point to the direct link */
+                    /* The sandbox swallowed that click — point to the direct link */
                     setHighlightLink(true);
                     setTimeout(() => {
                       document.getElementById("direct-link")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -208,6 +216,12 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
                     <Ic n="info" size={14} className="shrink-0 mt-0.5 text-cobalt-500" />
                     <span>{tt("Save hint")}</span>
                   </p>
+                  {sandboxed && (
+                    <button onClick={() => { window.open(window.location.href, "_blank"); toast(tt("Opening in a new tab"), "info"); }}
+                      className="mt-3 w-full btn-o !h-10 !text-[13px] !border-cobalt-400 !text-cobalt-700 dark:!text-cobalt-300 hover:!bg-cobalt-50 dark:hover:!bg-cobalt-500/10">
+                      <Ic n="arrowUR" size={15} />{tt("Open app in new tab")}
+                    </button>
+                  )}
                 </div>
               </>
             )}
