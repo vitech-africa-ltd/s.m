@@ -20,11 +20,14 @@ function detectOS(): OS {
   return "linux";
 }
 
-/* Installer scripts embedded in the package so the user gets a real local setup */
-const BAT_INSTALL = `@echo off\r\ntitle VITECH School - Installation\r\ncolor 0B\r\necho ============================================================\r\necho   VITECH SCHOOL MANAGEMENT SYSTEM - Installation\r\necho ============================================================\r\necho.\r\nwhere node >nul 2>nul\r\nif %ERRORLEVEL% NEQ 0 (\r\n    echo [ERREUR] Node.js n'est pas installe.\r\n    echo Telechargez-le ici : https://nodejs.org/ (version LTS)\r\n    pause\r\n    exit /b 1\r\n)\r\necho [OK] Node.js detecte.\r\necho.\r\necho [1/2] Installation des dependances...\r\ncall npm install --no-audit --no-fund\r\nif %ERRORLEVEL% NEQ 0 ( echo [ERREUR] npm install a echoue. & pause & exit /b 1 )\r\necho.\r\necho [2/2] Compilation de l'application...\r\ncall npm run build\r\nif %ERRORLEVEL% NEQ 0 ( echo [ERREUR] Compilation echouee. & pause & exit /b 1 )\r\necho.\r\necho ============================================================\r\necho   INSTALLATION TERMINEE ! Lancez maintenant : start.bat\r\necho ============================================================\r\npause\r\n`;
-const BAT_START = `@echo off\r\ntitle VITECH School - Serveur local\r\ncolor 0A\r\nif not exist "dist\\index.html" ( echo Lancez d'abord install.bat & pause & exit /b 1 )\r\necho ============================================================\r\necho   VITECH SCHOOL - Serveur local\r\necho   Ouvrez : http://localhost:4173\r\necho   Arret : Ctrl + C\r\necho ============================================================\r\ncall npm run preview\r\n`;
-const SH_INSTALL = `#!/bin/bash\nclear\necho "============================================================"\necho "  VITECH SCHOOL MANAGEMENT SYSTEM - Installation"\necho "============================================================"\nif ! command -v node >/dev/null 2>&1; then\n  echo "[ERREUR] Node.js manquant : https://nodejs.org/ (LTS)"; exit 1\nfi\necho "[OK] Node.js $(node -v)"\necho "[1/2] Installation des dependances..."\nnpm install --no-audit --no-fund || { echo "[ERREUR] npm install a echoue."; exit 1; }\necho "[2/2] Compilation..."\nnpm run build || { echo "[ERREUR] Compilation echouee."; exit 1; }\necho ""\necho "INSTALLATION TERMINEE ! Lancez : ./start.sh"\n`;
-const SH_START = `#!/bin/bash\nclear\necho "============================================================"\necho "  VITECH SCHOOL - Serveur local"\necho "  Ouvrez : http://localhost:4173   (Arret : Ctrl + C)"\necho "============================================================"\n[ -f "dist/index.html" ] || { echo "Lancez d'abord ./install.sh"; exit 1; }\nnpm run preview\n`;
+/* Installer scripts embedded in the package so the user gets a real local setup.
+   They clone the GitHub repository automatically if the source is not bundled. */
+const REPO_URL = "https://github.com/vitech-africa-ltd/sm.git";
+
+const BAT_INSTALL = `@echo off\r\ntitle VITECH School - Installation\r\ncolor 0B\r\necho ============================================================\r\necho   VITECH SCHOOL MANAGEMENT SYSTEM - Installation\r\necho ============================================================\r\necho.\r\nwhere node >nul 2>nul\r\nif %ERRORLEVEL% NEQ 0 (\r\n    echo [ERREUR] Node.js n'est pas installe.\r\n    echo Telechargez-le ici : https://nodejs.org/ (version LTS)\r\n    pause\r\n    exit /b 1\r\n)\r\necho [OK] Node.js detecte.\r\necho.\r\nif not exist "package.json" (\r\n    echo [INFO] Code source non trouve - telechargement depuis GitHub...\r\n    where git >nul 2>nul\r\n    if %ERRORLEVEL% NEQ 0 (\r\n        echo [ERREUR] Git n'est pas installe.\r\n        echo Telechargez-le ici : https://git-scm.com/download/win\r\n        pause\r\n        exit /b 1\r\n    )\r\n    git clone ${REPO_URL} src-app\r\n    if %ERRORLEVEL% NEQ 0 ( echo [ERREUR] Le telechargement du code a echoue. Verifiez que le depot est public. & pause & exit /b 1 )\r\n    cd src-app\r\n)\r\necho.\r\necho [1/2] Installation des dependances...\r\ncall npm install --no-audit --no-fund\r\nif %ERRORLEVEL% NEQ 0 ( echo [ERREUR] npm install a echoue. & pause & exit /b 1 )\r\necho.\r\necho [2/2] Compilation de l'application...\r\ncall npm run build\r\nif %ERRORLEVEL% NEQ 0 ( echo [ERREUR] Compilation echouee. & pause & exit /b 1 )\r\necho.\r\necho ============================================================\r\necho   INSTALLATION TERMINEE ! Lancez maintenant : start.bat\r\necho ============================================================\r\npause\r\n`;
+const BAT_START = `@echo off\r\ntitle VITECH School - Serveur local\r\ncolor 0A\r\nif exist "src-app\\dist\\index.html" cd src-app\r\nif not exist "dist\\index.html" ( echo Lancez d'abord install.bat & pause & exit /b 1 )\r\necho ============================================================\r\necho   VITECH SCHOOL - Serveur local\r\necho   Ouvrez : http://localhost:4173\r\necho   Arret : Ctrl + C\r\necho ============================================================\r\ncall npm run preview\r\n`;
+const SH_INSTALL = `#!/bin/bash\nclear\necho "============================================================"\necho "  VITECH SCHOOL MANAGEMENT SYSTEM - Installation"\necho "============================================================"\nif ! command -v node >/dev/null 2>&1; then\n  echo "[ERREUR] Node.js manquant : https://nodejs.org/ (LTS)"; exit 1\nfi\necho "[OK] Node.js $(node -v)"\nif [ ! -f "package.json" ]; then\n  echo "[INFO] Code source non trouve - telechargement depuis GitHub..."\n  if ! command -v git >/dev/null 2>&1; then\n    echo "[ERREUR] Git manquant : https://git-scm.com/downloads"; exit 1\n  fi\n  git clone ${REPO_URL} src-app || { echo "[ERREUR] Telechargement du code echoue. Verifiez que le depot est public."; exit 1; }\n  cd src-app\nfi\necho "[1/2] Installation des dependances..."\nnpm install --no-audit --no-fund || { echo "[ERREUR] npm install a echoue."; exit 1; }\necho "[2/2] Compilation..."\nnpm run build || { echo "[ERREUR] Compilation echouee."; exit 1; }\necho ""\necho "INSTALLATION TERMINEE ! Lancez : ./start.sh"\n`;
+const SH_START = `#!/bin/bash\nclear\necho "============================================================"\necho "  VITECH SCHOOL - Serveur local"\necho "  Ouvrez : http://localhost:4173   (Arret : Ctrl + C)"\necho "============================================================"\n[ -d "src-app/dist" ] && cd src-app\n[ -f "dist/index.html" ] || { echo "Lancez d'abord ./install.sh"; exit 1; }\nnpm run preview\n`;
 
 export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
   const s = useApp();
@@ -36,7 +39,12 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [history, setHistory] = useState<{ os: OS; date: string }[]>([]);
+  const [copied, setCopied] = useState(false);
   const buildId = useRef(0);
+  const blobRef = useRef<Blob | null>(null);
+  /* Preview iframes (e.g. sandboxed demos) forbid programmatic downloads —
+     detect that so we can surface the right-click / copy-link fallbacks. */
+  const sandboxed = useMemo(() => { try { return window.self !== window.top; } catch { return true; } }, []);
 
   /* Pre-build the package as soon as a platform is chosen, so the download
      button is a REAL <a download> link — the click is never blocked. */
@@ -67,6 +75,7 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
     zip.file(`${folder}/offline-shell/index.html`, "<!doctype html><html><body style='font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#f1f4fa;color:#101d38'><b>VITECH School — offline shell ready</b></body></html>");
     zip.generateAsync({ type: "blob" }).then((blob) => {
       if (buildId.current !== id) return; // a newer build superseded this one
+      blobRef.current = blob;
       setBlobUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(blob); });
       setFileName(`VITECH-School-${db.system.version}-${target}-installer.zip`);
       setBuilding(false);
@@ -118,23 +127,54 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
               })}
             </div>
 
-            {/* PRIMARY download — a real anchor (direct user gesture, works in browsers) */}
+            {/* PRIMARY download — uses the File System Access API (showSaveFilePicker)
+                which opens the native OS save dialog and writes the file straight to
+                disk. This works even inside sandboxed preview iframes where normal
+                blob: downloads are blocked by the browser. */}
             {building || !blobUrl ? (
               <div className="btn-p w-full !h-12 !text-[15px] pointer-events-none opacity-80">
                 <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />{tt("Preparing package")}…
               </div>
             ) : (
               <>
-                <a href={blobUrl} download={fileName} onClick={() => { setHistory((h) => [{ os: target, date: new Date().toLocaleString() }, ...h].slice(0, 5)); toast(`${tt("Download started")} — ${p.label}`, "ok"); }}
+                <button onClick={async () => {
+                  setHistory((h) => [{ os: target, date: new Date().toLocaleString() }, ...h].slice(0, 5));
+                  const blob = blobRef.current;
+                  if (!blob) { toast("Package not ready — try again", "err"); return; }
+                  /* Path 1 — native save dialog (works in sandboxed previews) */
+                  const w = window as unknown as { showSaveFilePicker?: (o: unknown) => Promise<{ createWritable: () => Promise<{ write: (b: Blob) => Promise<void>; close: () => Promise<void> }> }> };
+                  if (typeof w.showSaveFilePicker === "function") {
+                    try {
+                      const handle = await w.showSaveFilePicker({
+                        suggestedName: fileName,
+                        types: [{ description: "ZIP archive", accept: { "application/zip": [".zip"] } }],
+                      });
+                      const writable = await handle.createWritable();
+                      await writable.write(blob);
+                      await writable.close();
+                      toast(`${tt("Download complete")} — ${fileName}`, "ok");
+                      return;
+                    } catch (e) {
+                      const name = (e as { name?: string })?.name;
+                      if (name === "AbortError") return; /* user closed the dialog */
+                      /* fall through to the classic download */
+                    }
+                  }
+                  /* Path 2 — classic anchor download (normal browsers / deployed site) */
+                  const a = document.createElement("a");
+                  a.href = blobUrl; a.download = fileName;
+                  document.body.appendChild(a); a.click(); a.remove();
+                  toast(`${tt("Download started")} — ${p.label}`, "ok");
+                }}
                   className="btn-p w-full !h-12 !text-[15px] hover:!bg-cobalt-500">
                   <Ic n="download" size={18} />{tt("Download for")} {p.label} (.{p.ext})
-                </a>
-                {/* FALLBACK — forced save via a new tab; works even in sandboxed previews
-                    where the download attribute on blob: URLs is blocked */}
-                <button onClick={() => { setHistory((h) => [{ os: target, date: new Date().toLocaleString() }, ...h].slice(0, 5)); const w = window.open(blobUrl, "_blank", "noopener"); if (!w) { const a = document.createElement("a"); a.href = blobUrl; a.download = fileName; a.target = "_blank"; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); } toast(tt("Opening in a new tab") + "…", "info"); }}
-                  className="btn-o w-full mt-2.5 !text-[13.5px]">
-                  <Ic n="arrowUR" size={15} />{tt("Nothing happened? Save via new tab")}
                 </button>
+                {sandboxed && (
+                  <p className="mt-2.5 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-500/10 px-3 py-2.5 text-[11.5px] font-semibold text-amber-800 dark:text-amber-200">
+                    <Ic n="info" size={14} className="shrink-0 mt-0.5" />
+                    <span>{tt("Preview note")}</span>
+                  </p>
+                )}
               </>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-[11.5px] text-ink-400 font-semibold">
