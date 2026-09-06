@@ -40,6 +40,8 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
   const [fileName, setFileName] = useState("");
   const [history, setHistory] = useState<{ os: OS; date: string }[]>([]);
   const [copied, setCopied] = useState(false);
+  const [dataUri, setDataUri] = useState<string | null>(null);
+  const [highlightLink, setHighlightLink] = useState(false);
   const buildId = useRef(0);
   const blobRef = useRef<Blob | null>(null);
   /* Preview iframes (e.g. sandboxed demos) forbid programmatic downloads —
@@ -73,10 +75,16 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
     zip.file("start.sh", SH_START);
     zip.file(`${folder}/installer-info.json`, JSON.stringify({ app: "VITECH School", version: db.system.version, platform: target, channel: db.system.channel, school: db.school.name, generated: new Date().toISOString() }, null, 2));
     zip.file(`${folder}/offline-shell/index.html`, "<!doctype html><html><body style='font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#f1f4fa;color:#101d38'><b>VITECH School — offline shell ready</b></body></html>");
-    zip.generateAsync({ type: "blob" }).then((blob) => {
+    /* Generate once as base64 → derive both the Blob and a data: URI.
+       The data: URI powers the always-visible direct link, which can be
+       saved via right-click → "Save link as" even inside sandboxed previews. */
+    zip.generateAsync({ type: "base64" }).then((b64) => {
       if (buildId.current !== id) return; // a newer build superseded this one
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/zip" });
       blobRef.current = blob;
       setBlobUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(blob); });
+      setDataUri(`data:application/zip;base64,${b64}`);
       setFileName(`VITECH-School-${db.system.version}-${target}-installer.zip`);
       setBuilding(false);
     }).catch(() => { if (buildId.current === id) { setBuilding(false); toast("Package build failed — try again", "err"); } });
@@ -165,16 +173,42 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
                   a.href = blobUrl; a.download = fileName;
                   document.body.appendChild(a); a.click(); a.remove();
                   toast(`${tt("Download started")} — ${p.label}`, "ok");
+                  if (sandboxed) {
+                    /* The sandbox almost certainly swallowed that click — point to the direct link */
+                    setHighlightLink(true);
+                    setTimeout(() => {
+                      document.getElementById("direct-link")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 150);
+                  }
                 }}
                   className="btn-p w-full !h-12 !text-[15px] hover:!bg-cobalt-500">
                   <Ic n="download" size={18} />{tt("Download for")} {p.label} (.{p.ext})
                 </button>
-                {sandboxed && (
-                  <p className="mt-2.5 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-500/10 px-3 py-2.5 text-[11.5px] font-semibold text-amber-800 dark:text-amber-200">
-                    <Ic n="info" size={14} className="shrink-0 mt-0.5" />
-                    <span>{tt("Preview note")}</span>
+
+                {/* DIRECT LINK — always present. A data: URI saved with
+                    right-click → "Save link as…" works even where every
+                    programmatic download is blocked. */}
+                <div id="direct-link" className={`mt-4 rounded-xl border-2 border-dashed p-4 transition-all duration-300 ${highlightLink || sandboxed ? "border-gold-400 bg-gold-50 dark:bg-gold-500/10 shadow-[0_0_0_4px_rgb(220_166_56/0.15)]" : "border-ink-200 dark:border-ink-700"}`}>
+                  <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-400">
+                    <Ic n="download" size={13} />{tt("Direct link")}
+                    {sandboxed && <span className="chip bg-gold-400 text-ink-950 !text-[9.5px] !py-0.5 ml-auto">{tt("Works in preview")}</span>}
+                  </div>
+                  {dataUri ? (
+                    <a href={dataUri} download={fileName}
+                      onClick={() => { setHistory((h) => [{ os: target, date: new Date().toLocaleString() }, ...h].slice(0, 5)); toast(`${tt("Download started")} — ${p.label}`, "ok"); }}
+                      className="mt-2.5 flex items-center gap-2.5 font-mono text-[12.5px] sm:text-[13px] font-bold text-cobalt-700 dark:text-cobalt-300 underline decoration-2 decoration-cobalt-400/50 underline-offset-4 hover:text-gold-600 dark:hover:text-gold-300 hover:decoration-gold-400 transition-colors break-all">
+                      <Ic n="folder" size={16} className="shrink-0" />{fileName}
+                    </a>
+                  ) : (
+                    <div className="mt-2.5 flex items-center gap-2 text-[12.5px] text-ink-400 font-semibold">
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-cobalt-200 border-t-cobalt-600 animate-spin" />{tt("Preparing package")}…
+                    </div>
+                  )}
+                  <p className="text-[12px] text-ink-500 dark:text-ink-300 mt-2.5 leading-relaxed flex gap-2">
+                    <Ic n="info" size={14} className="shrink-0 mt-0.5 text-cobalt-500" />
+                    <span>{tt("Save hint")}</span>
                   </p>
-                )}
+                </div>
               </>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-[11.5px] text-ink-400 font-semibold">
