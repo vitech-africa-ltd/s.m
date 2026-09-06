@@ -184,7 +184,7 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
   const user = me(s);
   const lang = s.prefs.lang;
   const role = user?.role ?? "student";
-  const mtOn = s.prefs.mt !== false;
+  const mtOn = s.prefs.mt === true;
   const [drawer, setDrawer] = useState(false);
   const [search, setSearch] = useState(false);
   const [userMenu, setUserMenu] = useState(false);

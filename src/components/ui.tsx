@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { Ic } from "./icons";
 import { useT } from "../lib/i18n";
-import { PHOTOS } from "../lib/media";
+import { PHOTOS, galleryStore } from "../lib/media";
 
 /* ---------- hooks ---------- */
 export function useMounted() { const [m, setM] = useState(false); useEffect(() => { const t = requestAnimationFrame(() => setM(true)); return () => cancelAnimationFrame(t); }, []); return m; }
@@ -30,8 +30,12 @@ export function Reveal({ children, delay = 0, className = "" }: { children: Reac
 
 /* ---------- atoms ---------- */
 export function Avatar({ first, last, hue, size = 34, photo }: { first: string; last: string; hue: number; size?: number; photo?: string }) {
+  /* re-render when the gallery health probe settles */
+  useSyncExternalStore(galleryStore.subscribe, galleryStore.getVersion);
   const [err, setErr] = useState(false);
-  if (photo && !err) {
+  const isLocal = !!photo && photo.startsWith("data:");
+  const usable = !!photo && !err && (isLocal || galleryStore.isAlive());
+  if (usable) {
     return <img src={photo} alt={`${first} ${last}`} width={size} height={size} onError={() => setErr(true)}
       loading="lazy" decoding="async" referrerPolicy="no-referrer"
       className="rounded-full object-cover shrink-0 select-none bg-ink-100 dark:bg-ink-800" style={{ width: size, height: size }} />;
@@ -163,6 +167,8 @@ export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boo
 /* ---------- photo picker ---------- */
 export function PhotoPicker({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
   const tt = useT();
+  useSyncExternalStore(galleryStore.subscribe, galleryStore.getVersion);
+  const galleryOk = galleryStore.isAlive();
   return (
     <div>
       <span className="label">{tt("Photo")}</span>
@@ -171,14 +177,18 @@ export function PhotoPicker({ value, onChange }: { value?: string; onChange: (v:
           <Avatar first={value ? "✓" : "?"} last="" hue={215} size={52} photo={value || undefined} />
           {value && <span className="absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 min-w-[18px] h-[18px] rounded-full bg-emerald-500 text-white flex items-center justify-center"><Ic n="check" size={10} sw={3} /></span>}
         </span>
-        <div className="flex gap-1.5 flex-wrap max-w-[240px]">
-          {PHOTOS.map((p, i) => (
-            <button type="button" key={p} onClick={() => onChange(p)} title={`Photo ${i + 1}`}
-              className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all cursor-pointer hover:scale-110 active:scale-95 ${value === p ? "border-cobalt-500 scale-110 shadow-panel" : "border-transparent opacity-70 hover:opacity-100"}`}>
-              <img src={p} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="" />
-            </button>
-          ))}
-        </div>
+        {galleryOk ? (
+          <div className="flex gap-1.5 flex-wrap max-w-[240px]">
+            {PHOTOS.map((p, i) => (
+              <button type="button" key={p} onClick={() => onChange(p)} title={`Photo ${i + 1}`}
+                className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all cursor-pointer hover:scale-110 active:scale-95 ${value === p ? "border-cobalt-500 scale-110 shadow-panel" : "border-transparent opacity-70 hover:opacity-100"}`}>
+                <img src={p} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="" />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span className="text-[11.5px] text-ink-400 font-semibold max-w-[200px]">{tt("Gallery unavailable")}</span>
+        )}
         <div className="flex gap-1.5">
           <label className="btn-o btn-sm cursor-pointer"><Ic n="upload" size={13} />{tt("Upload")}
             <input type="file" accept="image/*" className="hidden" onChange={(e) => {

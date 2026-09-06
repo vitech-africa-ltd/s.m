@@ -75,6 +75,7 @@ const fr: Dict = {
   "Active": "Actif", "Inactive": "Inactif", "Pending": "En attente", "Approved": "Approuvé", "Rejected": "Rejeté", "Paid": "Payé",
   "Overdue": "En retard", "Scheduled": "Programmé", "Completed": "Terminé", "Valid": "Valide", "New student": "Nouvel étudiant",
   "Showing": "Affichage", "of": "sur", "Welcome back": "Bon retour",
+  "Gallery unavailable": "Galerie indisponible — importez une photo depuis votre appareil.",
   "VITECH School for your desktop": "VITECH School pour votre ordinateur",
   "The full school ERP, offline-first, on Windows, macOS and Linux.": "L'ERP scolaire complet, hors-ligne d'abord, sur Windows, macOS et Linux.",
   "Download for": "Télécharger pour", "Preparing package": "Préparation du paquet", "Package ready": "Paquet prêt", "Download started": "Téléchargement démarré",
@@ -191,7 +192,7 @@ export const t = (lang: Lang, key: string) => dicts[normalize(lang)]?.[key] ?? k
 export function useT() {
   const s = useApp();
   const lang = normalize(s.prefs.lang as string);
-  const mtEnabled = s.prefs.mt !== false;
+  const mtEnabled = s.prefs.mt === true;
   const [, bump] = useState(0);
   useEffect(() => onMT(() => bump((x) => x + 1)), []);
   return (key: string) => {

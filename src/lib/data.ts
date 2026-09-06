@@ -461,13 +461,15 @@ function load(): AppState {
       const s = JSON.parse(raw) as AppState;
       if (s?.db?.v === 3) {
         if (!LANG_CODES.includes(s.prefs?.lang)) s.prefs = { theme: s.prefs?.theme === "dark" ? "dark" : "light", lang: "en" };
+        /* AI machine-translation is opt-in: never auto-call the remote API */
+        if (s.prefs) s.prefs.mt = s.prefs.mt === true;
         if (!s.db.system) s.db.system = { version: "3.2.0", channel: "stable", autoUpdate: true, available: "3.3.0", history: [] };
         if (!s.db.school.reportCard) s.db.school.reportCard = { ...DEFAULT_RC };
         return s;
       }
     }
   } catch { /* corrupted -> reseed */ }
-  return { db: seed(), session: null, prefs: { theme: "light", lang: "en", mt: true } };
+  return { db: seed(), session: null, prefs: { theme: "light", lang: "en", mt: false } };
 }
 let state: AppState = load();
 const subs = new Set<() => void>();

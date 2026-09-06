@@ -16,9 +16,11 @@ export const onMT = (f: () => void) => { subs.add(f); return () => { subs.delete
 export const mtGet = (lang: string, key: string) => cache[lang]?.[key];
 const save = () => { try { localStorage.setItem(MT_KEY, JSON.stringify(cache)); } catch { /* quota */ } };
 
-/* ---- circuit breaker ---- */
+/* ---- circuit breaker (persisted so it survives page reloads) ---- */
 const COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes after a rate-limit
+const COOLDOWN_KEY = "vitech-mt-cooldown";
 let cooldownUntil = 0; // timestamp until which we do NOT call the API
+try { cooldownUntil = Number(localStorage.getItem(COOLDOWN_KEY)) || 0; } catch { cooldownUntil = 0; }
 let consecutiveFailures = 0;
 const MAX_FAILURES = 2; // after this many failures in a row, enter cooldown
 
@@ -27,7 +29,11 @@ const failedKeys = new Map<string, number>(); // `${lang}:${key}` -> expiry time
 const FAIL_TTL = 15 * 60 * 1000;
 
 const inCooldown = () => Date.now() < cooldownUntil;
-const enterCooldown = () => { cooldownUntil = Date.now() + COOLDOWN_MS; consecutiveFailures = 0; };
+const enterCooldown = () => {
+  cooldownUntil = Date.now() + COOLDOWN_MS;
+  consecutiveFailures = 0;
+  try { localStorage.setItem(COOLDOWN_KEY, String(cooldownUntil)); } catch { /* ignore */ }
+};
 
 const pending = new Map<string, Set<string>>();
 let timer: ReturnType<typeof setTimeout> | null = null;

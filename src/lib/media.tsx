@@ -1,5 +1,9 @@
-/* Portrait gallery + real QR component */
-import { useEffect, useRef, useState } from "react";
+/* Portrait gallery + real QR component.
+   The gallery lives on a remote host that may be unavailable (expired demo
+   URLs, offline users, blocked networks). A single health probe decides
+   whether avatars use the gallery or fall back to initials — so a dead
+   host never floods the console with one 404 per student row. */
+import { useEffect, useRef } from "react";
 import QRCode from "qrcode";
 
 export const PHOTOS = [
@@ -12,10 +16,38 @@ export const PHOTOS = [
   "https://image.qwenlm.ai/generated-images/ad683a43-a5a9-4993-b83a-ac973f89224d/_result.png",
   "https://image.qwenlm.ai/generated-images/2c8eb28d-5089-4b5f-9135-8734e98ce023/_result.png",
 ];
+
+/* ---- gallery health probe (reactive store) ---- */
+let galleryAlive = true; // optimistic until proven dead
+let galleryVersion = 0;
+let probed = false;
+const gSubs = new Set<() => void>();
+const probeGallery = () => {
+  if (probed || typeof window === "undefined") return;
+  probed = true;
+  const img = new Image();
+  const settle = (ok: boolean) => {
+    if (galleryAlive !== ok) { galleryAlive = ok; galleryVersion++; gSubs.forEach((f) => f()); }
+  };
+  img.onload = () => settle(true);
+  img.onerror = () => settle(false);
+  img.src = PHOTOS[0];
+};
+export const galleryStore = {
+  subscribe: (f: () => void) => { gSubs.add(f); probeGallery(); return () => { gSubs.delete(f); }; },
+  getVersion: () => galleryVersion,
+  isAlive: () => galleryAlive,
+};
+
 const hashIdx = (id: string, mod: number) => { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0; return h % mod; };
 export const photoFor = (id: string) => PHOTOS[hashIdx(id, PHOTOS.length)];
-/** Custom photo wins over the deterministic gallery pick. */
-export const personPhoto = (p: { id: string; photo?: string }) => p.photo || photoFor(p.id);
+
+/** Custom uploads (data: URIs) always win; the gallery is used only while reachable. */
+export const personPhoto = (p: { id: string; photo?: string }): string | undefined => {
+  if (p.photo) return p.photo;
+  if (!galleryAlive) return undefined;
+  return photoFor(p.id);
+};
 
 export function QR({ value, size = 72, light = "#ffffff", dark = "#101d38" }: { value: string; size?: number; light?: string; dark?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
