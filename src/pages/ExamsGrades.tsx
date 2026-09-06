@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useApp, mutate, audit, notify, uid, daysAhead, fmtDate, gradeLetter, classRanking, attStatus, lastSchoolDays, classOf, DEFAULT_RC, type Student } from "../lib/data";
 import { Ic } from "../components/icons";
-import { Modal, Field, Chip, Avatar, toast, PrintPortal, Empty } from "../components/ui";
+import { Modal, Field, Chip, Avatar, toast, PrintPortal, Empty, printSheet } from "../components/ui";
 import { personPhoto } from "../lib/media";
 import { PageHead } from "./Dashboard";
 import { useT } from "../lib/i18n";
@@ -275,7 +275,7 @@ export function ReportCardsPage() {
       </div>
       {view && (
         <Modal open onClose={() => setView(null)} title="Report card preview" w="max-w-3xl"
-          footer={<><button className="btn-o" onClick={() => setView(null)}>{tt("Close")}</button><button className="btn-p" onClick={() => window.print()}><Ic n="printer" size={15} />{tt("Print")} / PDF</button></>}>
+          footer={<><button className="btn-o" onClick={() => setView(null)}>{tt("Close")}</button><button className="btn-p" onClick={() => printSheet()}><Ic n="printer" size={15} />{tt("Print")} / PDF</button></>}>
           <ReportCardDoc st={view} examId={examId} tpl={tpl} />
           <PrintPortal><ReportCardDoc st={view} examId={examId} tpl={tpl} /></PrintPortal>
         </Modal>

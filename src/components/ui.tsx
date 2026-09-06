@@ -321,15 +321,51 @@ const printSubs = new Set<() => void>();
 export function usePrintSlot() { const [, setN] = useState(0); useEffect(() => { const f = () => setN((x) => x + 1); printSubs.add(f); return () => { printSubs.delete(f); }; }, []); }
 export function PrintHost() { usePrintSlot(); return null; }
 
-/** Render `content` into #print-sheet with a real React root, print, then clean up. */
+/**
+ * Print engine.
+ * — a single reusable React root renders synchronously (flushSync) into #print-sheet,
+ *   so repeated prints never hit the duplicate-root failure;
+ * — on a normal page the browser print dialog opens directly;
+ * — inside a sandboxed preview (where window.print() is silently swallowed) the
+ *   sheet is re-emitted into a clean popup window that carries the app stylesheets,
+ *   and THAT window prints — so ID cards, receipts and report cards always come out.
+ */
+import { flushSync } from "react-dom";
+let printRoot: ReturnType<typeof createRoot> | null = null;
+const isSandboxed = () => { try { return window.self !== window.top; } catch { return true; } };
+const collectStyles = () =>
+  Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map((n) => n.outerHTML).join("\n");
+const emitPrintWindow = (html: string) => {
+  const w = window.open("", "_blank", "width=940,height=780");
+  if (!w) return false;
+  w.document.open();
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>VITECH School — Print</title>${collectStyles()}
+    <style>html,body{background:#fff!important;margin:0!important;padding:0!important}#print-sheet{display:block!important}@page{margin:10mm}</style>
+  </head><body><div id="print-sheet">${html}</div></body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 500);
+  return true;
+};
 export function printNow(content: ReactNode) {
   const el = document.getElementById("print-sheet");
   if (!el) { window.print(); return; }
-  const root = createRoot(el);
-  root.render(<div className="bg-white text-ink-900">{content}</div>);
-  const cleanup = () => { setTimeout(() => { root.unmount(); el.innerHTML = ""; }, 800); };
+  if (!printRoot) printRoot = createRoot(el);
+  flushSync(() => { printRoot!.render(<div className="bg-white text-ink-900">{content}</div>); });
+  if (isSandboxed()) {
+    if (emitPrintWindow(el.innerHTML)) { printRoot.render(null); return; }
+  }
+  const cleanup = () => { setTimeout(() => printRoot?.render(null), 600); };
   window.addEventListener("afterprint", cleanup, { once: true });
-  setTimeout(() => { window.print(); setTimeout(cleanup, 4000); }, 150);
+  window.print();
+  setTimeout(cleanup, 6000);
+}
+/** Print whatever a PrintPortal is currently rendering into #print-sheet (report cards…). */
+export function printSheet() {
+  const el = document.getElementById("print-sheet");
+  if (!el || !el.innerHTML.trim()) { window.print(); return; }
+  if (isSandboxed()) { if (emitPrintWindow(el.innerHTML)) return; }
+  window.print();
 }
 
 /* ---------- toasts ---------- */
