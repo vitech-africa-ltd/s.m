@@ -33,6 +33,7 @@ export function Avatar({ first, last, hue, size = 34, photo }: { first: string; 
   const [err, setErr] = useState(false);
   if (photo && !err) {
     return <img src={photo} alt={`${first} ${last}`} width={size} height={size} onError={() => setErr(true)}
+      loading="lazy" decoding="async" referrerPolicy="no-referrer"
       className="rounded-full object-cover shrink-0 select-none bg-ink-100 dark:bg-ink-800" style={{ width: size, height: size }} />;
   }
   return (
@@ -174,7 +175,7 @@ export function PhotoPicker({ value, onChange }: { value?: string; onChange: (v:
           {PHOTOS.map((p, i) => (
             <button type="button" key={p} onClick={() => onChange(p)} title={`Photo ${i + 1}`}
               className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all cursor-pointer hover:scale-110 active:scale-95 ${value === p ? "border-cobalt-500 scale-110 shadow-panel" : "border-transparent opacity-70 hover:opacity-100"}`}>
-              <img src={p} className="w-full h-full object-cover" alt="" />
+              <img src={p} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="" />
             </button>
           ))}
         </div>

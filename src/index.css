@@ -50,9 +50,12 @@
 
 html { scroll-behavior: smooth; }
 
+html, body { overflow-x: clip; }
+
 body {
   @apply bg-paper text-ink-900 font-body antialiased;
   font-feature-settings: "ss01";
+  -webkit-tap-highlight-color: transparent;
 }
 .dark body { @apply bg-ink-950 text-ink-100; }
 
