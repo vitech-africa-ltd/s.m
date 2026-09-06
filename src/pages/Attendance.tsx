@@ -218,7 +218,6 @@ export default function AttendancePage() {
           </div>
         </div>
       )}
-      <span className="hidden">{mutate ? "" : ""}</span>
     </div>
   );
 }
