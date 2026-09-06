@@ -131,11 +131,7 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
                 {LANGS.map((l) => <option key={l.code} value={l.code}>{l.code.toUpperCase()}</option>)}
               </select>
             </label>
-            {/* login — icon on mobile, labelled on desktop */}
-            <button onClick={() => nav("/login")} aria-label={tt("Login")} title={tt("Login")}
-              className="md:hidden w-9 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 flex items-center justify-center text-ink-600 dark:text-ink-200 hover:border-cobalt-400 hover:text-cobalt-600 dark:hover:text-cobalt-300 transition-all active:scale-95 cursor-pointer">
-              <Ic n="user" size={16} />
-            </button>
+            {/* login — desktop header only; on mobile it lives once inside the hamburger menu */}
             <button className="btn-o btn-sm hidden md:inline-flex" onClick={() => nav("/login")}><Ic n="user" size={14} />{tt("Login")}</button>
             {/* get started — icon only on very small screens */}
             <button onClick={() => nav("/register")} aria-label={tt("Get Started")}
@@ -147,10 +143,13 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
             </button>
           </div>
         </div>
-        {/* mobile menu — navigation only (Login / Get Started already in the header) */}
+        {/* mobile menu — the single Login entry point on small screens */}
         {menuOpen && (
           <div className="lg:hidden border-t border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-lift pop-in">
             <nav className="max-w-7xl mx-auto px-4 py-3 flex flex-col" aria-label="Mobile">
+              <button onClick={() => nav("/login")} className="mb-1.5 flex items-center gap-3 px-3 py-3 rounded-lg text-[14.5px] font-bold text-cobalt-700 dark:text-cobalt-300 bg-cobalt-50 dark:bg-cobalt-500/10 hover:bg-cobalt-100 dark:hover:bg-cobalt-500/20 transition-colors cursor-pointer text-left">
+                <Ic n="user" size={17} />{tt("Login")}<Ic n="arrowUR" size={14} className="ml-auto opacity-60" />
+              </button>
               {[["features", "Features", "sparkles"], ["roles", "Roles", "idcard"], ["pricing", "Pricing", "coins"], ["security", "Security", "shield"]].map(([id, label, ic]) => (
                 <button key={id} onClick={() => goTo(id)} className="flex items-center gap-3 px-3 py-3 rounded-lg text-[14.5px] font-bold text-ink-700 dark:text-ink-100 hover:bg-cobalt-50 dark:hover:bg-cobalt-500/10 hover:text-cobalt-700 dark:hover:text-cobalt-300 transition-colors cursor-pointer text-left">
                   <Ic n={ic} size={17} className="text-ink-400" />{tt(label)}

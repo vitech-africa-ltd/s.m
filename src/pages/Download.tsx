@@ -118,16 +118,24 @@ export default function DownloadPage({ nav }: { nav: (to: string) => void }) {
               })}
             </div>
 
-            {/* PRIMARY download — a real anchor, never blocked by the browser */}
+            {/* PRIMARY download — a real anchor (direct user gesture, works in browsers) */}
             {building || !blobUrl ? (
               <div className="btn-p w-full !h-12 !text-[15px] pointer-events-none opacity-80">
                 <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />{tt("Preparing package")}…
               </div>
             ) : (
-              <a href={blobUrl} download={fileName} onClick={() => { setHistory((h) => [{ os: target, date: new Date().toLocaleString() }, ...h].slice(0, 5)); toast(`${tt("Download started")} — ${p.label}`, "ok"); }}
-                className="btn-p w-full !h-12 !text-[15px] hover:!bg-cobalt-500">
-                <Ic n="download" size={18} />{tt("Download for")} {p.label} (.{p.ext})
-              </a>
+              <>
+                <a href={blobUrl} download={fileName} onClick={() => { setHistory((h) => [{ os: target, date: new Date().toLocaleString() }, ...h].slice(0, 5)); toast(`${tt("Download started")} — ${p.label}`, "ok"); }}
+                  className="btn-p w-full !h-12 !text-[15px] hover:!bg-cobalt-500">
+                  <Ic n="download" size={18} />{tt("Download for")} {p.label} (.{p.ext})
+                </a>
+                {/* FALLBACK — forced save via a new tab; works even in sandboxed previews
+                    where the download attribute on blob: URLs is blocked */}
+                <button onClick={() => { setHistory((h) => [{ os: target, date: new Date().toLocaleString() }, ...h].slice(0, 5)); const w = window.open(blobUrl, "_blank", "noopener"); if (!w) { const a = document.createElement("a"); a.href = blobUrl; a.download = fileName; a.target = "_blank"; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); } toast(tt("Opening in a new tab") + "…", "info"); }}
+                  className="btn-o w-full mt-2.5 !text-[13.5px]">
+                  <Ic n="arrowUR" size={15} />{tt("Nothing happened? Save via new tab")}
+                </button>
+              </>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-[11.5px] text-ink-400 font-semibold">
               <span className="flex items-center gap-1.5"><Ic n="shield" size={13} className="text-emerald-500" />v{db.system.version} · {db.system.channel} · SHA-256 {tt("verified")}</span>
