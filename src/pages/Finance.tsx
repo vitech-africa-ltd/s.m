@@ -1,6 +1,7 @@
-import { useApp, fmtDate, fmtMoney, feeTotal, paidBy, classOf } from "../lib/data";
+import { useState } from "react";
+import { useApp, mutate, uid, fmtDate, fmtMoney, feeTotal, paidBy, classOf } from "../lib/data";
 import { Ic } from "../components/icons";
-import { Stat, Chip, Avatar } from "../components/ui";
+import { Stat, Chip, Avatar, Modal, Field, toast } from "../components/ui";
 import { useT } from "../lib/i18n";
 
 export function FeesPage() {
@@ -8,6 +9,57 @@ export function FeesPage() {
   const tt = useT();
   const db = s.db;
   const cur = db.school.currency;
+  const [showModal, setShowModal] = useState(false);
+  const [editingLevel, setEditingLevel] = useState(0);
+  const [items, setItems] = useState<{ name: string; amount: number }[]>([]);
+
+  const openEdit = (level: number) => {
+    const fs = db.feeStructures.find(f => f.level === level);
+    setEditingLevel(level);
+    setItems(fs?.items.map(i => ({ name: i.name, amount: i.amount })) || []);
+    setShowModal(true);
+  };
+
+  const saveFeeStructure = () => {
+    if (!editingLevel || items.length === 0) {
+      toast("Please add at least one fee item", "err");
+      return;
+    }
+
+    mutate((db) => {
+      const idx = db.feeStructures.findIndex(f => f.level === editingLevel);
+      const feeItems = items.map(item => ({
+        id: uid(),
+        name: item.name,
+        amount: item.amount,
+      }));
+
+      if (idx >= 0) {
+        db.feeStructures[idx].items = feeItems;
+      } else {
+        db.feeStructures.push({ level: editingLevel, items: feeItems });
+      }
+    });
+
+    toast("Fee structure saved successfully");
+    setShowModal(false);
+    setEditingLevel(0);
+    setItems([]);
+  };
+
+  const addItem = () => {
+    setItems([...items, { name: "", amount: 0 }]);
+  };
+
+  const removeItem = (idx: number) => {
+    setItems(items.filter((_, i) => i !== idx));
+  };
+
+  const updateItem = (idx: number, field: "name" | "amount", value: string | number) => {
+    const newItems = [...items];
+    newItems[idx] = { ...newItems[idx], [field]: value };
+    setItems(newItems);
+  };
   
   return (
     <div>
@@ -31,6 +83,7 @@ export function FeesPage() {
                 <th>{tt("Level")}</th>
                 <th>{tt("Items")}</th>
                 <th>{tt("Total")}</th>
+                <th>{tt("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -48,12 +101,54 @@ export function FeesPage() {
                     </div>
                   </td>
                   <td className="font-bold tnum">{fmtMoney(fs.items.reduce((a, i) => a + i.amount, 0), cur)}</td>
+                  <td>
+                    <button className="btn-g btn-sm" onClick={() => openEdit(fs.level)}>
+                      <Ic n="pencil" size={14} />{tt("Edit")}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={`${tt("Edit fee structure")} - Senior ${editingLevel}`} w="max-w-2xl">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            {items.map((item, idx) => (
+              <div key={idx} className="flex gap-2">
+                <input
+                  type="text"
+                  className="input flex-1"
+                  placeholder="Fee name"
+                  value={item.name}
+                  onChange={(e) => updateItem(idx, "name", e.target.value)}
+                />
+                <input
+                  type="number"
+                  className="input w-32"
+                  placeholder="Amount"
+                  value={item.amount || ""}
+                  onChange={(e) => updateItem(idx, "amount", parseFloat(e.target.value) || 0)}
+                />
+                <button className="btn-g btn-sm !text-rose-500" onClick={() => removeItem(idx)}>
+                  <Ic n="trash" size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <button className="btn-o btn-sm" onClick={addItem}>
+            <Ic n="plus" size={14} />{tt("Add item")}
+          </button>
+          <div className="flex justify-end gap-2 pt-4 border-t border-ink-100 dark:border-ink-800">
+            <button className="btn-o" onClick={() => setShowModal(false)}>{tt("Cancel")}</button>
+            <button className="btn-p" onClick={saveFeeStructure}>
+              <Ic n="check" size={15} />{tt("Save")}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -63,6 +158,35 @@ export function PaymentsPage() {
   const tt = useT();
   const db = s.db;
   const cur = db.school.currency;
+  const [showModal, setShowModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("Cash");
+  const [feeType, setFeeType] = useState("Tuition");
+
+  const createPayment = () => {
+    if (!selectedStudent || !amount) {
+      toast("Please fill all required fields", "err");
+      return;
+    }
+
+    mutate((db) => {
+      db.payments.unshift({
+        id: uid(),
+        receipt: `RC-${new Date().toISOString().replace(/-/g, "").slice(0, 8)}-${db.payments.length + 1}`,
+        studentId: selectedStudent,
+        amount: parseFloat(amount),
+        method,
+        feeType,
+        date: new Date().toISOString().slice(0, 10),
+      });
+    });
+
+    toast("Payment recorded successfully");
+    setShowModal(false);
+    setSelectedStudent("");
+    setAmount("");
+  };
   
   return (
     <div>
@@ -78,7 +202,9 @@ export function PaymentsPage() {
       <div className="panel overflow-hidden">
         <div className="panel-h">
           <h2 className="font-display font-bold text-[18px]">{tt("Recent payments")}</h2>
-          <button className="btn-p btn-sm"><Ic n="plus" size={15} />{tt("Record payment")}</button>
+          <button className="btn-p btn-sm" onClick={() => setShowModal(true)}>
+            <Ic n="plus" size={15} />{tt("Record payment")}
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="tbl">
@@ -89,6 +215,7 @@ export function PaymentsPage() {
                 <th>{tt("Amount")}</th>
                 <th>{tt("Method")}</th>
                 <th>{tt("Date")}</th>
+                <th>{tt("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -112,6 +239,11 @@ export function PaymentsPage() {
                       </Chip>
                     </td>
                     <td className="text-[12px] text-ink-400">{fmtDate(p.date)}</td>
+                    <td>
+                      <button className="btn-g btn-sm" onClick={() => toast("Payment details opened")}>
+                        <Ic n="eye" size={14} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -119,6 +251,46 @@ export function PaymentsPage() {
           </table>
         </div>
       </div>
+
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={tt("Record payment")} w="max-w-md">
+        <div className="space-y-4">
+          <div>
+            <label className="label">{tt("Student")}</label>
+            <select className="input" value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)}>
+              <option value="">Select student...</option>
+              {db.students.filter(s => s.status === "active").map(st => (
+                <option key={st.id} value={st.id}>{st.first} {st.last} - {st.regNo}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">{tt("Amount")}</label>
+            <input type="number" className="input" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+          </div>
+          <div>
+            <label className="label">{tt("Payment method")}</label>
+            <select className="input" value={method} onChange={(e) => setMethod(e.target.value)}>
+              <option value="Cash">Cash</option>
+              <option value="Mobile Money">Mobile Money</option>
+              <option value="Bank">Bank Transfer</option>
+              <option value="Card">Card</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">{tt("Fee type")}</label>
+            <select className="input" value={feeType} onChange={(e) => setFeeType(e.target.value)}>
+              <option value="Tuition">Tuition</option>
+              <option value="Registration">Registration</option>
+              <option value="Examination">Examination</option>
+              <option value="Transport">Transport</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <button className="btn-p w-full" onClick={createPayment}>
+            <Ic n="check" size={15} />{tt("Record payment")}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -128,6 +300,38 @@ export function ExpensesPage() {
   const tt = useT();
   const db = s.db;
   const cur = db.school.currency;
+  const [showModal, setShowModal] = useState(false);
+  const [category, setCategory] = useState("");
+  const [desc, setDesc] = useState("");
+  const [amount, setAmount] = useState("");
+  const [vendor, setVendor] = useState("");
+
+  const createExpense = () => {
+    if (!category || !amount) {
+      toast("Please fill required fields", "err");
+      return;
+    }
+
+    mutate((db) => {
+      db.expenses.unshift({
+        id: uid(),
+        category,
+        desc: desc || category,
+        amount: parseFloat(amount),
+        date: new Date().toISOString().slice(0, 10),
+        vendor: vendor || "N/A",
+        method: "Cash",
+        by: "Admin",
+      });
+    });
+
+    toast("Expense recorded successfully");
+    setShowModal(false);
+    setCategory("");
+    setDesc("");
+    setAmount("");
+    setVendor("");
+  };
   
   return (
     <div>
@@ -143,7 +347,9 @@ export function ExpensesPage() {
       <div className="panel overflow-hidden">
         <div className="panel-h">
           <h2 className="font-display font-bold text-[18px]">{tt("Recent expenses")}</h2>
-          <button className="btn-p btn-sm"><Ic n="plus" size={15} />{tt("Add expense")}</button>
+          <button className="btn-p btn-sm" onClick={() => setShowModal(true)}>
+            <Ic n="plus" size={15} />{tt("Add expense")}
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="tbl">
@@ -154,6 +360,7 @@ export function ExpensesPage() {
                 <th>{tt("Amount")}</th>
                 <th>{tt("Vendor")}</th>
                 <th>{tt("Date")}</th>
+                <th>{tt("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -164,12 +371,49 @@ export function ExpensesPage() {
                   <td className="font-bold tnum text-rose-600 dark:text-rose-400">{fmtMoney(e.amount, cur)}</td>
                   <td className="text-[12.5px]">{e.vendor}</td>
                   <td className="text-[12px] text-ink-400">{fmtDate(e.date)}</td>
+                  <td>
+                    <button className="btn-g btn-sm" onClick={() => toast("Expense details opened")}>
+                      <Ic n="eye" size={14} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={tt("Add expense")} w="max-w-md">
+        <div className="space-y-4">
+          <div>
+            <label className="label">{tt("Category")}</label>
+            <select className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">Select category...</option>
+              <option value="Salaries">Salaries</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Supplies">Supplies</option>
+              <option value="Transport">Transport</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">{tt("Description")}</label>
+            <input type="text" className="input" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Expense description" />
+          </div>
+          <div>
+            <label className="label">{tt("Amount")}</label>
+            <input type="number" className="input" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+          </div>
+          <div>
+            <label className="label">{tt("Vendor")}</label>
+            <input type="text" className="input" value={vendor} onChange={(e) => setVendor(e.target.value)} placeholder="Vendor name" />
+          </div>
+          <button className="btn-p w-full" onClick={createExpense}>
+            <Ic n="check" size={15} />{tt("Add expense")}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

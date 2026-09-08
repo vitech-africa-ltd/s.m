@@ -1,6 +1,6 @@
 import { useApp, fmtDate, fmtMoney } from "../lib/data";
 import { Ic } from "../components/icons";
-import { Stat, Avatar, Chip } from "../components/ui";
+import { Stat, Chip, Avatar } from "../components/ui";
 import { useT } from "../lib/i18n";
 
 export default function TeachersPage() {
@@ -35,6 +35,7 @@ export default function TeachersPage() {
                 <th>{tt("Status")}</th>
                 <th>{tt("Hired")}</th>
                 <th>{tt("Salary")}</th>
+                <th>{tt("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -58,6 +59,11 @@ export default function TeachersPage() {
                   </td>
                   <td className="text-[12px] text-ink-400">{fmtDate(t.hireDate)}</td>
                   <td className="font-bold tnum">{fmtMoney(t.salary, db.school.currency)}</td>
+                  <td>
+                    <button className="btn-g btn-sm" onClick={() => alert("Edit teacher - Coming soon")}>
+                      <Ic n="pencil" size={14} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -442,11 +442,68 @@ function seed(): DB {
 }
 
 const KEY = "vitech-state-v1";
+
+// Détection automatique de la langue du navigateur
 function detectBrowserLang(): Lang {
   if (typeof navigator === "undefined") return "en";
   const browserLang = navigator.language.split("-")[0];
   const supportedLangs: Lang[] = ["en", "fr", "es", "pt", "ar"];
   return supportedLangs.includes(browserLang as Lang) ? browserLang as Lang : "en";
+}
+
+// Détection automatique du pays et de la devise basée sur la timezone
+function detectCountryAndCurrency(): { country: string; currency: string; timezone: string } {
+  if (typeof Intl === "undefined" || !Intl.DateTimeFormat) {
+    return { country: "Rwanda", currency: "RWF", timezone: "Africa/Kigali" };
+  }
+  
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    // Mapping timezone -> pays -> devise
+    const timezoneMap: Record<string, { country: string; currency: string }> = {
+      "Africa/Kigali": { country: "Rwanda", currency: "RWF" },
+      "Africa/Nairobi": { country: "Kenya", currency: "KES" },
+      "Africa/Kampala": { country: "Uganda", currency: "UGX" },
+      "Africa/Dar_es_Salaam": { country: "Tanzania", currency: "TZS" },
+      "Africa/Bujumbura": { country: "Burundi", currency: "BIF" },
+      "Africa/Kinshasa": { country: "DR Congo", currency: "CDF" },
+      "Africa/Lagos": { country: "Nigeria", currency: "NGN" },
+      "Africa/Accra": { country: "Ghana", currency: "GHS" },
+      "Africa/Johannesburg": { country: "South Africa", currency: "ZAR" },
+      "Africa/Douala": { country: "Cameroon", currency: "XAF" },
+      "Europe/Paris": { country: "France", currency: "EUR" },
+      "Europe/London": { country: "United Kingdom", currency: "GBP" },
+      "America/New_York": { country: "United States", currency: "USD" },
+      "America/Chicago": { country: "United States", currency: "USD" },
+      "America/Los_Angeles": { country: "United States", currency: "USD" },
+    };
+    
+    const detected = timezoneMap[timezone];
+    if (detected) {
+      return { country: detected.country, currency: detected.currency, timezone };
+    }
+    
+    // Fallback: détecter par la langue du navigateur
+    const browserLang = navigator.language.split("-")[0];
+    const langMap: Record<string, { country: string; currency: string }> = {
+      "fr": { country: "France", currency: "EUR" },
+      "es": { country: "Spain", currency: "EUR" },
+      "pt": { country: "Portugal", currency: "EUR" },
+      "en": { country: "United States", currency: "USD" },
+      "ar": { country: "Saudi Arabia", currency: "SAR" },
+    };
+    
+    const langDetected = langMap[browserLang];
+    if (langDetected) {
+      return { country: langDetected.country, currency: langDetected.currency, timezone };
+    }
+    
+    // Fallback par défaut
+    return { country: "Rwanda", currency: "RWF", timezone: "Africa/Kigali" };
+  } catch {
+    return { country: "Rwanda", currency: "RWF", timezone: "Africa/Kigali" };
+  }
 }
 
 function load(): AppState {
@@ -462,7 +519,19 @@ function load(): AppState {
       }
     }
   } catch { /* corrupted -> reseed */ }
-  return { db: seed(), session: null, prefs: { theme: "light", lang: detectBrowserLang(), mt: false } };
+  
+  // Détection automatique du pays et de la devise
+  const detected = detectCountryAndCurrency();
+  const initialDb = seed();
+  initialDb.school.country = detected.country;
+  initialDb.school.currency = detected.currency;
+  initialDb.school.timezone = detected.timezone;
+  
+  return { 
+    db: initialDb, 
+    session: null, 
+    prefs: { theme: "light", lang: detectBrowserLang(), mt: false } 
+  };
 }
 let state: AppState = load();
 const subs = new Set<() => void>();
