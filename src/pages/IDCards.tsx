@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useApp, fmtDate } from "../lib/data";
+import { useApp, mutate, uid, todayISO, fmtDate } from "../lib/data";
 import { Ic } from "../components/icons";
-import { Stat, Chip, Avatar, toast, printNow } from "../components/ui";
+import { Stat, Chip, Modal, Field, toast, printNow } from "../components/ui";
 import { useT } from "../lib/i18n";
-import QRCode from "qrcode";
+import { QR } from "../lib/media";
 
 export default function IDCardsPage() {
   const s = useApp();
@@ -11,58 +11,15 @@ export default function IDCardsPage() {
   const db = s.db;
   const [selectedType, setSelectedType] = useState<"student" | "teacher" | "staff">("student");
   const [selectedId, setSelectedId] = useState<string>("");
-
-  const generateQR = async (data: string) => {
-    try {
-      return await QRCode.toDataURL(data, { width: 120, margin: 1 });
-    } catch (err) {
-      return "";
-    }
-  };
-
-  const printCard = async (person: any) => {
-    const qrData = `VITECH-${selectedType.toUpperCase()}-${person.id}`;
-    const qrCode = await generateQR(qrData);
-    
-    printNow(
-      <div className="p-8 max-w-[400px] mx-auto">
-        <div className="border-2 border-ink-900 dark:border-ink-100 rounded-lg p-6 bg-white dark:bg-ink-900">
-          <div className="text-center mb-4">
-            <h1 className="font-display text-[20px] font-bold">{db.school.name}</h1>
-            <p className="text-[12px] text-ink-400">{db.school.address}</p>
-          </div>
-          
-          <div className="flex items-center gap-4 mb-4">
-            <Avatar first={person.first} last={person.last} hue={person.hue} size={80} />
-            <div className="flex-1">
-              <h2 className="font-display text-[18px] font-bold">{person.first} {person.last}</h2>
-              <p className="text-[12px] text-ink-400">{person.idNumber}</p>
-              <p className="text-[12px] text-ink-400">{person.details}</p>
-            </div>
-          </div>
-
-          <div className="border-t border-ink-200 dark:border-ink-700 pt-4 mb-4">
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <div><strong>ID:</strong> {person.idNumber}</div>
-              <div><strong>Valid:</strong> {db.school.academicYear}</div>
-              <div><strong>Phone:</strong> {person.phone || "N/A"}</div>
-              <div><strong>Email:</strong> {person.email || "N/A"}</div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="text-[10px] text-ink-400">
-              <p>Issued: {fmtDate(new Date().toISOString().slice(0, 10))}</p>
-              <p>If found, please return to school</p>
-            </div>
-            {qrCode && (
-              <img src={qrCode} alt="QR Code" className="w-20 h-20" />
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const [showCustomize, setShowCustomize] = useState(false);
+  const [cardStyle, setCardStyle] = useState({
+    bgColor: "#1e49c9",
+    textColor: "#ffffff",
+    accentColor: "#dca638",
+    showQR: true,
+    showPhoto: true,
+    showExpiry: true,
+  });
 
   const getPeople = () => {
     switch (selectedType) {
@@ -110,6 +67,100 @@ export default function IDCardsPage() {
   const people = getPeople();
   const selectedPerson = people.find(p => p.id === selectedId);
 
+  const generateCard = async (person: any) => {
+    const qrData = `VITECH-${selectedType.toUpperCase()}-${person.id}`;
+    
+    printNow(
+      <div className="p-8 max-w-[400px] mx-auto">
+        <div 
+          className="rounded-xl overflow-hidden shadow-2xl"
+          style={{ 
+            background: `linear-gradient(135deg, ${cardStyle.bgColor} 0%, ${cardStyle.bgColor}dd 100%)`,
+            color: cardStyle.textColor
+          }}
+        >
+          {/* Header */}
+          <div className="p-6 text-center border-b-2" style={{ borderColor: cardStyle.accentColor }}>
+            <div className="font-display font-bold text-[20px] mb-1">{db.school.name}</div>
+            <div className="text-[11px] opacity-80">{db.school.motto}</div>
+            <div className="text-[10px] opacity-60 mt-1">{db.school.address}</div>
+          </div>
+          
+          {/* Card Type Badge */}
+          <div className="px-6 py-2 text-center" style={{ backgroundColor: cardStyle.accentColor, color: "#101d38" }}>
+            <div className="font-bold text-[12px] uppercase tracking-wider">
+              {selectedType === "student" ? "Student ID" : selectedType === "teacher" ? "Teacher ID" : "Staff ID"}
+            </div>
+          </div>
+          
+          {/* Content */}
+          <div className="p-6">
+            <div className="flex items-start gap-4 mb-4">
+              {cardStyle.showPhoto && (
+                <div 
+                  className="w-20 h-20 rounded-lg flex items-center justify-center text-[28px] font-bold shrink-0"
+                  style={{ 
+                    background: `linear-gradient(135deg, hsl(${person.hue} 55% 46%), hsl(${(person.hue + 40) % 360} 60% 34%))`,
+                    color: "#fff"
+                  }}
+                >
+                  {person.first[0]}{person.last[0]}
+                </div>
+              )}
+              <div className="flex-1">
+                <div className="font-display font-bold text-[22px] leading-tight mb-1">
+                  {person.first} {person.last}
+                </div>
+                <div className="text-[13px] opacity-80 font-mono mb-1">{person.idNumber}</div>
+                <div className="text-[12px] opacity-70">{person.details}</div>
+              </div>
+            </div>
+            
+            {/* Details Grid */}
+            <div className="grid grid-cols-2 gap-3 mb-4 text-[11px]">
+              {person.phone && (
+                <div>
+                  <div className="opacity-60 mb-0.5">Phone</div>
+                  <div className="font-semibold">{person.phone}</div>
+                </div>
+              )}
+              {person.email && (
+                <div>
+                  <div className="opacity-60 mb-0.5">Email</div>
+                  <div className="font-semibold truncate">{person.email}</div>
+                </div>
+              )}
+              <div>
+                <div className="opacity-60 mb-0.5">Issued</div>
+                <div className="font-semibold">{fmtDate(todayISO())}</div>
+              </div>
+              {cardStyle.showExpiry && (
+                <div>
+                  <div className="opacity-60 mb-0.5">Valid Until</div>
+                  <div className="font-semibold">{db.school.academicYear}</div>
+                </div>
+              )}
+            </div>
+            
+            {/* Footer with QR */}
+            {cardStyle.showQR && (
+              <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: `${cardStyle.textColor}33` }}>
+                <div className="text-[9px] opacity-60">
+                  <div>If found, please return to:</div>
+                  <div className="font-semibold">{db.school.name}</div>
+                  <div>{db.school.phone}</div>
+                </div>
+                <div className="bg-white p-2 rounded-lg">
+                  <QR value={qrData} size={60} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       <h1 className="font-display text-[26px] font-bold mb-5">{tt("ID Cards")}</h1>
@@ -122,7 +173,12 @@ export default function IDCardsPage() {
       </div>
 
       <div className="panel p-6 mb-5">
-        <h2 className="font-display font-bold text-[18px] mb-4">{tt("Generate ID Card")}</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display font-bold text-[18px]">{tt("Generate ID Card")}</h2>
+          <button className="btn-o btn-sm" onClick={() => setShowCustomize(true)}>
+            <Ic n="settings" size={15} />{tt("Customize")}
+          </button>
+        </div>
         
         <div className="space-y-4">
           <div>
@@ -167,15 +223,22 @@ export default function IDCardsPage() {
           {selectedPerson && (
             <div className="border border-ink-200 dark:border-ink-700 rounded-lg p-4">
               <div className="flex items-center gap-4 mb-4">
-                <Avatar first={selectedPerson.first} last={selectedPerson.last} hue={selectedPerson.hue} size={64} />
-                <div>
+                <div 
+                  className="w-16 h-16 rounded-lg flex items-center justify-center text-[20px] font-bold shrink-0"
+                  style={{ 
+                    background: `linear-gradient(135deg, hsl(${selectedPerson.hue} 55% 46%), hsl(${(selectedPerson.hue + 40) % 360} 60% 34%))`,
+                    color: "#fff"
+                  }}
+                >
+                  {selectedPerson.first[0]}{selectedPerson.last[0]}
+                </div>
+                <div className="flex-1">
                   <h3 className="font-display font-bold text-[16px]">{selectedPerson.first} {selectedPerson.last}</h3>
-                  <p className="text-[12px] text-ink-400">
-                    {selectedPerson.idNumber}
-                  </p>
+                  <p className="text-[12px] text-ink-400">{selectedPerson.idNumber}</p>
+                  <p className="text-[12px] text-ink-400">{selectedPerson.details}</p>
                 </div>
               </div>
-              <button className="btn-p w-full" onClick={() => printCard(selectedPerson)}>
+              <button className="btn-p w-full" onClick={() => generateCard(selectedPerson)}>
                 <Ic n="printer" size={16} />
                 {tt("Print ID Card")}
               </button>
@@ -194,6 +257,7 @@ export default function IDCardsPage() {
               <tr>
                 <th>{tt("Name")}</th>
                 <th>{tt("ID")}</th>
+                <th>{tt("Details")}</th>
                 <th>{tt("Status")}</th>
                 <th>{tt("Actions")}</th>
               </tr>
@@ -203,18 +267,27 @@ export default function IDCardsPage() {
                 <tr key={p.id}>
                   <td>
                     <div className="flex items-center gap-2">
-                      <Avatar first={p.first} last={p.last} hue={p.hue} size={32} />
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
+                        style={{ 
+                          background: `linear-gradient(135deg, hsl(${p.hue} 55% 46%), hsl(${(p.hue + 40) % 360} 60% 34%))`,
+                          color: "#fff"
+                        }}
+                      >
+                        {p.first[0]}{p.last[0]}
+                      </div>
                       <span className="font-semibold text-[13px]">{p.first} {p.last}</span>
                     </div>
                   </td>
                   <td className="font-mono text-[12px] text-cobalt-600 dark:text-cobalt-400">
                     {p.idNumber}
                   </td>
+                  <td className="text-[12.5px]">{p.details}</td>
                   <td>
                     <Chip tone="green">{p.status}</Chip>
                   </td>
                   <td>
-                    <button className="btn-g btn-sm" onClick={() => printCard(p)}>
+                    <button className="btn-g btn-sm" onClick={() => generateCard(p)}>
                       <Ic n="printer" size={14} />
                     </button>
                   </td>
@@ -224,6 +297,68 @@ export default function IDCardsPage() {
           </table>
         </div>
       </div>
+
+      {/* Customize Modal */}
+      <Modal open={showCustomize} onClose={() => setShowCustomize(false)} title={tt("Customize card design")} w="max-w-md">
+        <div className="space-y-4">
+          <Field label={tt("Background color")}>
+            <input 
+              type="color" 
+              className="input h-12" 
+              value={cardStyle.bgColor} 
+              onChange={(e) => setCardStyle({ ...cardStyle, bgColor: e.target.value })}
+            />
+          </Field>
+          <Field label={tt("Text color")}>
+            <input 
+              type="color" 
+              className="input h-12" 
+              value={cardStyle.textColor} 
+              onChange={(e) => setCardStyle({ ...cardStyle, textColor: e.target.value })}
+            />
+          </Field>
+          <Field label={tt("Accent color")}>
+            <input 
+              type="color" 
+              className="input h-12" 
+              value={cardStyle.accentColor} 
+              onChange={(e) => setCardStyle({ ...cardStyle, accentColor: e.target.value })}
+            />
+          </Field>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={cardStyle.showQR} 
+                onChange={(e) => setCardStyle({ ...cardStyle, showQR: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <span className="text-[13px]">{tt("Show QR code")}</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={cardStyle.showPhoto} 
+                onChange={(e) => setCardStyle({ ...cardStyle, showPhoto: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <span className="text-[13px]">{tt("Show photo")}</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={cardStyle.showExpiry} 
+                onChange={(e) => setCardStyle({ ...cardStyle, showExpiry: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <span className="text-[13px]">{tt("Show expiry date")}</span>
+            </label>
+          </div>
+          <button className="btn-p w-full" onClick={() => { setShowCustomize(false); toast("Card design saved"); }}>
+            <Ic n="check" size={15} />{tt("Save design")}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
