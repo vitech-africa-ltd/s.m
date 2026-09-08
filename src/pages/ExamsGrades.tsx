@@ -367,7 +367,15 @@ export function ReportCardsPage() {
       <div className="panel overflow-hidden">
         <div className="panel-h">
           <h2 className="font-display font-bold text-[18px]">{tt("Generate report cards")}</h2>
-          <button className="btn-p btn-sm" onClick={() => toast("Bulk generation - Coming soon")}>
+          <button className="btn-p btn-sm" onClick={() => {
+            const activeStudents = db.students.filter(s => s.status === "active");
+            let generated = 0;
+            activeStudents.forEach(student => {
+              generateReportCard(student.id);
+              generated++;
+            });
+            toast(`Generated ${generated} report cards`);
+          }}>
             <Ic n="download" size={15} />{tt("Generate all")}
           </button>
         </div>

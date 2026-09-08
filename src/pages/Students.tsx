@@ -246,6 +246,24 @@ export function AdmissionsPage() {
   const s = useApp();
   const tt = useT();
   const db = s.db;
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedAdmission, setSelectedAdmission] = useState<any>(null);
+
+  const openDetails = (admission: any) => {
+    setSelectedAdmission(admission);
+    setShowDetails(true);
+  };
+
+  const advanceStage = (id: string, newStage: string) => {
+    mutate((db) => {
+      const adm = db.admissions.find(a => a.id === id);
+      if (adm) {
+        adm.stage = newStage as any;
+      }
+    });
+    toast(`Application ${newStage}`);
+    setShowDetails(false);
+  };
 
   return (
     <div>
@@ -293,7 +311,7 @@ export function AdmissionsPage() {
                   </td>
                   <td className="text-[12px] text-ink-400">{fmtDate(adm.date)}</td>
                   <td>
-                    <button className="btn-g btn-sm" onClick={() => toast("Application details opened")}>
+                    <button className="btn-g btn-sm" onClick={() => openDetails(adm)}>
                       <Ic n="eye" size={14} />
                     </button>
                   </td>
@@ -303,6 +321,49 @@ export function AdmissionsPage() {
           </table>
         </div>
       </div>
+
+      <Modal open={showDetails} onClose={() => setShowDetails(false)} title={tt("Application Details")} w="max-w-md">
+        {selectedAdmission && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div><strong>Application No:</strong> {selectedAdmission.appNo}</div>
+              <div><strong>Student:</strong> {selectedAdmission.first} {selectedAdmission.last}</div>
+              <div><strong>Level:</strong> Senior {selectedAdmission.level}</div>
+              <div><strong>Parent:</strong> {selectedAdmission.parent}</div>
+              <div><strong>Phone:</strong> {selectedAdmission.phone}</div>
+              <div><strong>Date:</strong> {fmtDate(selectedAdmission.date)}</div>
+              <div><strong>Stage:</strong> <Chip tone={selectedAdmission.stage === "enrolled" ? "green" : selectedAdmission.stage === "approved" ? "blue" : selectedAdmission.stage === "rejected" ? "red" : "gold"}>{selectedAdmission.stage}</Chip></div>
+            </div>
+            <div className="flex gap-2 pt-4 border-t border-ink-100 dark:border-ink-800">
+              {selectedAdmission.stage === "application" && (
+                <>
+                  <button className="btn-p flex-1" onClick={() => advanceStage(selectedAdmission.id, "review")}>
+                    <Ic n="check" size={15} />Review
+                  </button>
+                  <button className="btn-d flex-1" onClick={() => advanceStage(selectedAdmission.id, "rejected")}>
+                    <Ic n="x" size={15} />Reject
+                  </button>
+                </>
+              )}
+              {selectedAdmission.stage === "review" && (
+                <>
+                  <button className="btn-p flex-1" onClick={() => advanceStage(selectedAdmission.id, "approved")}>
+                    <Ic n="check" size={15} />Approve
+                  </button>
+                  <button className="btn-d flex-1" onClick={() => advanceStage(selectedAdmission.id, "rejected")}>
+                    <Ic n="x" size={15} />Reject
+                  </button>
+                </>
+              )}
+              {selectedAdmission.stage === "approved" && (
+                <button className="btn-p w-full" onClick={() => advanceStage(selectedAdmission.id, "enrolled")}>
+                  <Ic n="check" size={15} />Enroll Student
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

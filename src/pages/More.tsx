@@ -234,25 +234,58 @@ export function HRPage() {
   const tt = useT();
   const db = s.db;
   const [showModal, setShowModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<any>(null);
   const [formData, setFormData] = useState({ name: "", dept: "", position: "", salary: 0 });
 
-  const addStaff = () => {
+  const openModal = (staff?: any) => {
+    if (staff) {
+      setEditingStaff(staff);
+      setFormData({
+        name: staff.name,
+        dept: staff.dept,
+        position: staff.position,
+        salary: staff.salary
+      });
+    } else {
+      setEditingStaff(null);
+      setFormData({ name: "", dept: "", position: "", salary: 0 });
+    }
+    setShowModal(true);
+  };
+
+  const saveStaff = () => {
     if (!formData.name || !formData.dept) {
       toast("Please fill required fields", "err");
       return;
     }
     mutate((db) => {
-      db.staff.unshift({
-        id: uid(),
-        empNo: `EMP-${db.staff.length + 1}`,
-        ...formData,
-        hired: new Date().toISOString().slice(0, 10),
-        status: "active",
-      });
+      if (editingStaff) {
+        const idx = db.staff.findIndex(s => s.id === editingStaff.id);
+        if (idx >= 0) {
+          db.staff[idx] = { ...db.staff[idx], ...formData };
+        }
+      } else {
+        db.staff.unshift({
+          id: uid(),
+          empNo: `EMP-${db.staff.length + 1}`,
+          ...formData,
+          hired: new Date().toISOString().slice(0, 10),
+          status: "active",
+        });
+      }
     });
-    toast("Staff member added");
+    toast(editingStaff ? "Staff updated" : "Staff member added");
     setShowModal(false);
-    setFormData({ name: "", dept: "", position: "", salary: 0 });
+    setEditingStaff(null);
+  };
+
+  const deleteStaff = (id: string) => {
+    if (confirm("Are you sure you want to delete this staff member?")) {
+      mutate((db) => {
+        db.staff = db.staff.filter(s => s.id !== id);
+      });
+      toast("Staff member deleted");
+    }
   };
 
   return (
@@ -300,9 +333,14 @@ export function HRPage() {
                   </td>
                   <td className="font-bold tnum">{fmtMoney(st.salary, db.school.currency)}</td>
                   <td>
-                    <button className="btn-g btn-sm" onClick={() => toast("Edit staff - Coming soon")}>
-                      <Ic n="pencil" size={14} />
-                    </button>
+                    <div className="flex gap-1">
+                      <button className="btn-g btn-sm" onClick={() => openModal(st)}>
+                        <Ic n="pencil" size={14} />
+                      </button>
+                      <button className="btn-g btn-sm !text-rose-500" onClick={() => deleteStaff(st.id)}>
+                        <Ic n="trash" size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -311,7 +349,7 @@ export function HRPage() {
         </div>
       </div>
 
-      <Modal open={showModal} onClose={() => setShowModal(false)} title={tt("Add staff member")} w="max-w-md">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={editingStaff ? tt("Edit staff member") : tt("Add staff member")} w="max-w-md">
         <div className="space-y-4">
           <Field label={tt("Full name")}>
             <input type="text" className="input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
@@ -332,8 +370,8 @@ export function HRPage() {
           <Field label={tt("Salary")}>
             <input type="number" className="input" value={formData.salary} onChange={(e) => setFormData({ ...formData, salary: parseFloat(e.target.value) })} />
           </Field>
-          <button className="btn-p w-full" onClick={addStaff}>
-            <Ic n="check" size={15} />{tt("Add staff")}
+          <button className="btn-p w-full" onClick={saveStaff}>
+            <Ic n="check" size={15} />{editingStaff ? tt("Update") : tt("Add staff")}
           </button>
         </div>
       </Modal>
@@ -406,7 +444,17 @@ export function DocumentsPage() {
                   <td className="text-[12px] text-ink-400">{fmtDate(doc.date)}</td>
                   <td>
                     <div className="flex gap-1">
-                      <button className="btn-g btn-sm" onClick={() => toast("Download started")}>
+                      <button className="btn-g btn-sm" onClick={() => {
+                        const content = `Document: ${doc.name}\nCategory: ${doc.category}\nSize: ${doc.size}\nUploaded by: ${doc.by}\nDate: ${doc.date}\n\nThis is a placeholder document content.`;
+                        const blob = new Blob([content], { type: "text/plain" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = doc.name;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast("Document downloaded");
+                      }}>
                         <Ic n="download" size={14} />
                       </button>
                       <button className="btn-g btn-sm !text-rose-500" onClick={() => deleteDocument(doc.id)}>
@@ -494,7 +542,67 @@ export function CertificatesPage() {
                   </td>
                   <td className="text-[12px] text-ink-400">{fmtDate(cert.date)}</td>
                   <td>
-                    <button className="btn-g btn-sm" onClick={() => toast("Print certificate")}>
+                    <button className="btn-g btn-sm" onClick={() => {
+                      const content = `
+                        <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
+                          <div style="text-align: center; border-bottom: 3px solid #1e49c9; padding-bottom: 20px; margin-bottom: 30px;">
+                            <h1 style="color: #1e49c9; margin: 0;">${db.school.name}</h1>
+                            <p style="color: #6f90c2; margin: 5px 0 0 0;">${db.school.motto}</p>
+                          </div>
+                          <div style="text-align: center; margin: 40px 0;">
+                            <h2 style="color: #1e49c9; font-size: 28px; margin-bottom: 20px;">${cert.type}</h2>
+                            <p style="font-size: 16px; margin-bottom: 10px;">This is to certify that</p>
+                            <h3 style="font-size: 32px; color: #101d38; margin: 20px 0;">${cert.recipient}</h3>
+                            <p style="font-size: 16px; margin-bottom: 10px;">has successfully completed the requirements for</p>
+                            <p style="font-size: 18px; color: #dca638; font-weight: bold;">${cert.type}</p>
+                            ${cert.note ? `<p style="font-size: 14px; color: #6f90c2; margin-top: 20px; font-style: italic;">${cert.note}</p>` : ''}
+                          </div>
+                          <div style="margin-top: 60px; display: flex; justify-content: space-between; align-items: end;">
+                            <div style="text-align: center;">
+                              <div style="border-top: 2px solid #101d38; padding-top: 10px; min-width: 200px;">
+                                <p style="margin: 0; font-size: 14px;">Date Issued</p>
+                                <p style="margin: 5px 0 0 0; font-weight: bold;">${fmtDate(cert.date)}</p>
+                              </div>
+                            </div>
+                            <div style="text-align: center;">
+                              <div style="border: 3px double #dca638; padding: 15px; border-radius: 50%; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;">
+                                <p style="margin: 0; font-size: 10px; color: #dca638; font-weight: bold; text-align: center;">Official<br/>School<br/>Stamp</p>
+                              </div>
+                            </div>
+                            <div style="text-align: center;">
+                              <div style="border-top: 2px solid #101d38; padding-top: 10px; min-width: 200px;">
+                                <p style="margin: 0; font-size: 14px;">Certificate Code</p>
+                                <p style="margin: 5px 0 0 0; font-weight: bold; font-family: monospace;">${cert.code}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      `;
+                      const printWindow = window.open('', '_blank');
+                      if (printWindow) {
+                        printWindow.document.write(`
+                          <!DOCTYPE html>
+                          <html>
+                          <head>
+                            <title>Certificate - ${cert.recipient}</title>
+                            <style>
+                              @media print {
+                                body { margin: 0; padding: 0; }
+                              }
+                            </style>
+                          </head>
+                          <body>${content}</body>
+                          </html>
+                        `);
+                        printWindow.document.close();
+                        printWindow.focus();
+                        setTimeout(() => {
+                          printWindow.print();
+                          printWindow.close();
+                        }, 250);
+                      }
+                      toast("Certificate opened for printing");
+                    }}>
                       <Ic n="printer" size={14} />
                     </button>
                   </td>
@@ -602,7 +710,63 @@ export function IDCardsPage() {
       <div className="panel p-6">
         <h2 className="font-display font-bold text-[18px] mb-4">{tt("Generate ID Cards")}</h2>
         <p className="text-ink-400 mb-4">{tt("ID card generation with QR codes")}</p>
-        <button className="btn-p" onClick={() => toast("ID card generation - Coming soon")}>
+        <button className="btn-p" onClick={() => {
+          const activeStudents = db.students.filter(s => s.status === "active");
+          const content = activeStudents.map(student => {
+            const cls = db.classes.find(c => c.id === student.classId);
+            return `
+              <div style="width: 350px; height: 220px; border: 2px solid #1e49c9; border-radius: 12px; margin: 20px; padding: 20px; background: linear-gradient(135deg, #1e49c9 0%, #2b5ce9 100%); color: white; position: relative; overflow: hidden;">
+                <div style="text-align: center; border-bottom: 2px solid #dca638; padding-bottom: 10px; margin-bottom: 15px;">
+                  <h3 style="margin: 0; font-size: 16px;">${db.school.name}</h3>
+                  <p style="margin: 5px 0 0 0; font-size: 10px; opacity: 0.8;">${db.school.motto}</p>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                  <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, hsl(${student.hue} 55% 46%), hsl(${(student.hue + 40) % 360} 60% 34%)); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold;">
+                    ${student.first[0]}${student.last[0]}
+                  </div>
+                  <div style="flex: 1;">
+                    <h4 style="margin: 0 0 5px 0; font-size: 18px;">${student.first} ${student.last}</h4>
+                    <p style="margin: 0 0 3px 0; font-size: 12px; font-family: monospace;">${student.regNo}</p>
+                    <p style="margin: 0; font-size: 11px; opacity: 0.9;">${cls ? `${cls.name} ${cls.section}` : 'Student'}</p>
+                  </div>
+                </div>
+                <div style="position: absolute; bottom: 10px; right: 10px; width: 50px; height: 50px; background: white; padding: 5px; border-radius: 4px;">
+                  <div style="width: 100%; height: 100%; background: repeating-linear-gradient(45deg, #1e49c9, #1e49c9 2px, white 2px, white 4px);"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+          
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(`
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <title>Student ID Cards</title>
+                <style>
+                  body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                  @media print {
+                    body { padding: 0; }
+                  }
+                </style>
+              </head>
+              <body>
+                <h1 style="text-align: center; color: #1e49c9;">Student ID Cards</h1>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+                  ${content}
+                </div>
+              </body>
+              </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+              printWindow.print();
+            }, 250);
+          }
+          toast(`Generated ${activeStudents.length} ID cards`);
+        }}>
           <Ic n="idcard" size={15} />{tt("Generate cards")}
         </button>
       </div>
