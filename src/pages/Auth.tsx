@@ -4,6 +4,7 @@ import { Ic } from "../components/icons";
 import { toast, Field } from "../components/ui";
 import { useT, LANGS } from "../lib/i18n";
 import { OAuthLoginButtons } from "../components/OAuthLoginButton";
+import { AITranslationPanel } from "../components/AITranslationPanel";
 
 export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () => void }) {
   const s = useApp();
@@ -67,11 +68,25 @@ export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () =
           <button className="btn-o btn-sm" onClick={() => nav("/")}><Ic n="chevL" size={14} />{tt("Back to site")}</button>
         </div>
       </header>
-      <main className="flex-1 flex items-start justify-center px-4 py-10">
-        <div className="w-full max-w-md">
-          <h1 className="font-display text-[28px] font-bold tracking-tight">{tt("Sign in to your school")}</h1>
-          <p className="text-[14px] text-ink-400 mt-1 mb-6">{tt("Secure access with role-based permissions.")}</p>
-          <div className="panel p-6">
+      <main className="flex-1 flex items-start justify-center px-3 sm:px-4 py-6 sm:py-10">
+        <div className="w-full max-w-md space-y-4">
+          <div className="text-center sm:text-left">
+            <h1 className="font-display text-[24px] sm:text-[28px] font-bold tracking-tight">{tt("Sign in to your school")}</h1>
+            <p className="text-[13px] sm:text-[14px] text-ink-400 mt-1">{tt("Secure access with role-based permissions.")}</p>
+          </div>
+          
+          {/* AI Translation Panel */}
+          <div className="flex justify-end">
+            <AITranslationPanel 
+              text="Sign in to your school" 
+              targetLang={lang}
+              onTranslation={(translated) => {
+                // Could update UI with translated text
+              }}
+            />
+          </div>
+          
+          <div className="panel p-4 sm:p-6">
             {step === "creds" ? (
               <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="space-y-4">
                 <Field label={tt("Email address")}><input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@school.edu" required /></Field>
