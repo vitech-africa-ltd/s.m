@@ -3,6 +3,7 @@ import { useApp, me, mutate, setPrefs } from "../lib/data";
 import { Ic } from "../components/icons";
 import { Avatar, Field, Chip } from "../components/ui";
 import { useT, LANGS } from "../lib/i18n";
+import { ProfilePhotoManager } from "../components/ProfilePhotoManager";
 
 export default function ProfilePage() {
   const s = useApp();
@@ -32,7 +33,14 @@ export default function ProfilePage() {
       <div className="grid lg:grid-cols-[300px_1fr] gap-6">
         {/* Profile card */}
         <div className="panel p-6 text-center">
-          <Avatar first={user.name.split(" ")[0]} last={user.name.split(" ")[1] || ""} hue={user.hue} size={120} />
+          <div className="flex justify-center mb-4">
+            <ProfilePhotoManager 
+              userId={user.id} 
+              userName={user.name} 
+              userHue={user.hue} 
+              size={120}
+            />
+          </div>
           <h2 className="font-display font-bold text-[22px] mt-4 mb-1">{user.name}</h2>
           <p className="text-ink-400 text-[13px] mb-3">{user.email}</p>
           <Chip tone="blue" className="mb-4">{user.role}</Chip>

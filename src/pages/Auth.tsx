@@ -3,6 +3,7 @@ import { useApp, setSession, setPrefs, mutate, audit, uid, todayISO, COUNTRIES, 
 import { Ic } from "../components/icons";
 import { toast, Field } from "../components/ui";
 import { useT, LANGS } from "../lib/i18n";
+import { OAuthLoginButtons } from "../components/OAuthLoginButton";
 
 export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () => void }) {
   const s = useApp();
@@ -97,6 +98,22 @@ export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () =
                 <button className="btn-p w-full" type="submit">{tt("Verify & continue")}</button>
                 <button type="button" className="btn-g w-full" onClick={() => setStep("creds")}><Ic n="chevL" size={15} />{tt("Back")}</button>
               </form>
+            )}
+            
+            {/* OAuth Login Buttons */}
+            {step === "creds" && (
+              <div className="mt-6">
+                <OAuthLoginButtons 
+                  onSuccess={(userData) => {
+                    toast(`Logged in with ${userData.provider}`);
+                    // In production, this would create or find the user and log them in
+                    onDone();
+                  }}
+                  onError={(error) => {
+                    toast(`OAuth login failed: ${error.message}`, 'err');
+                  }}
+                />
+              </div>
             )}
           </div>
           <div className="panel p-5 mt-5">

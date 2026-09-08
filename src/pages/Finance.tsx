@@ -3,6 +3,7 @@ import { useApp, mutate, uid, fmtDate, fmtMoney, feeTotal, paidBy, classOf } fro
 import { Ic } from "../components/icons";
 import { Stat, Chip, Avatar, Modal, Field, toast } from "../components/ui";
 import { useT } from "../lib/i18n";
+import { printProfessional, generatePrintHeader, generatePrintFooter, generateSignatureSection } from "../utils/print";
 
 export function FeesPage() {
   const s = useApp();
@@ -187,6 +188,129 @@ export function PaymentsPage() {
     setSelectedStudent("");
     setAmount("");
   };
+
+  const printReceipt = (payment: any) => {
+    const student = db.students.find(x => x.id === payment.studentId);
+    const content = `
+      ${generatePrintHeader(db.school.name, `${db.school.address} | ${db.school.phone}`)}
+      <div class="print-content">
+        <h2 style="text-align: center; color: #1e49c9; margin-bottom: 30px;">PAYMENT RECEIPT</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Receipt Number</h3>
+            <div class="value" style="font-size: 18px;">${payment.receipt}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Date</h3>
+            <div class="value" style="font-size: 18px;">${fmtDate(payment.date)}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Amount</h3>
+            <div class="value">${fmtMoney(payment.amount, cur)}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Payment Method</h3>
+            <div class="value" style="font-size: 18px;">${payment.method}</div>
+          </div>
+        </div>
+        <table>
+          <tr>
+            <th colspan="2">Student Information</th>
+          </tr>
+          <tr>
+            <td><strong>Name:</strong></td>
+            <td>${student ? `${student.first} ${student.last}` : 'N/A'}</td>
+          </tr>
+          <tr>
+            <td><strong>Registration No:</strong></td>
+            <td>${student ? student.regNo : 'N/A'}</td>
+          </tr>
+          <tr>
+            <td><strong>Class:</strong></td>
+            <td>${student ? `${db.classes.find(c => c.id === student.classId)?.name || 'N/A'} ${db.classes.find(c => c.id === student.classId)?.section || ''}` : 'N/A'}</td>
+          </tr>
+          <tr>
+            <th colspan="2">Payment Details</th>
+          </tr>
+          <tr>
+            <td><strong>Fee Type:</strong></td>
+            <td>${payment.feeType}</td>
+          </tr>
+          <tr>
+            <td><strong>Payment Method:</strong></td>
+            <td>${payment.method}</td>
+          </tr>
+          <tr>
+            <td><strong>Amount Paid:</strong></td>
+            <td><strong>${fmtMoney(payment.amount, cur)}</strong></td>
+          </tr>
+        </table>
+        ${generateSignatureSection()}
+      </div>
+      ${generatePrintFooter()}
+    `;
+    printProfessional(content, `Receipt ${payment.receipt}`);
+  };
+
+  const printFinancialReport = () => {
+    const totalRevenue = db.payments.reduce((a, p) => a + p.amount, 0);
+    const totalExpenses = db.expenses.reduce((a, e) => a + e.amount, 0);
+    const netProfit = totalRevenue - totalExpenses;
+    
+    const content = `
+      ${generatePrintHeader(db.school.name, `${db.school.address} | ${db.school.phone}`)}
+      <div class="print-content">
+        <h2 style="text-align: center; color: #1e49c9; margin-bottom: 30px;">FINANCIAL REPORT</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Revenue</h3>
+            <div class="value">${fmtMoney(totalRevenue, cur)}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Total Expenses</h3>
+            <div class="value">${fmtMoney(totalExpenses, cur)}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Net Profit</h3>
+            <div class="value" style="color: ${netProfit >= 0 ? '#10b981' : '#ef4444'}">${fmtMoney(netProfit, cur)}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Total Payments</h3>
+            <div class="value">${db.payments.length}</div>
+          </div>
+        </div>
+        <h3 style="margin-top: 30px; color: #1e49c9;">Recent Payments</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Receipt</th>
+              <th>Student</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${db.payments.slice(0, 10).map(p => {
+              const student = db.students.find(x => x.id === p.studentId);
+              return `
+                <tr>
+                  <td>${p.receipt}</td>
+                  <td>${student ? `${student.first} ${student.last}` : 'N/A'}</td>
+                  <td>${fmtMoney(p.amount, cur)}</td>
+                  <td>${p.method}</td>
+                  <td>${fmtDate(p.date)}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+        ${generateSignatureSection()}
+      </div>
+      ${generatePrintFooter()}
+    `;
+    printProfessional(content, "Financial Report");
+  };
   
   return (
     <div>
@@ -202,9 +326,14 @@ export function PaymentsPage() {
       <div className="panel overflow-hidden">
         <div className="panel-h">
           <h2 className="font-display font-bold text-[18px]">{tt("Recent payments")}</h2>
-          <button className="btn-p btn-sm" onClick={() => setShowModal(true)}>
-            <Ic n="plus" size={15} />{tt("Record payment")}
-          </button>
+          <div className="flex gap-2">
+            <button className="btn-o btn-sm" onClick={printFinancialReport}>
+              <Ic n="printer" size={15} />{tt("Print Report")}
+            </button>
+            <button className="btn-p btn-sm" onClick={() => setShowModal(true)}>
+              <Ic n="plus" size={15} />{tt("Record payment")}
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="tbl">
@@ -240,9 +369,14 @@ export function PaymentsPage() {
                     </td>
                     <td className="text-[12px] text-ink-400">{fmtDate(p.date)}</td>
                     <td>
-                      <button className="btn-g btn-sm" onClick={() => toast("Payment details opened")}>
-                        <Ic n="eye" size={14} />
-                      </button>
+                      <div className="flex gap-1">
+                        <button className="btn-g btn-sm" onClick={() => printReceipt(p)} title="Print Receipt">
+                          <Ic n="printer" size={14} />
+                        </button>
+                        <button className="btn-g btn-sm" onClick={() => toast("Payment details opened")}>
+                          <Ic n="eye" size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
