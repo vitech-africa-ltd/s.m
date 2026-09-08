@@ -119,16 +119,16 @@ export const PERIODS = [["08:00", "08:45"], ["08:50", "09:35"], ["09:40", "10:25
 export const PERMS: Record<string, string[]> = {
   super: ["*"],
   admin: ["*"],
-  principal: ["students", "admissions", "teachers", "classes", "timetable", "attendance", "exams", "grades", "reports_cards", "analytics", "calendar", "documents", "certificates", "communication", "idcards", "settings", "elearning"],
-  accountant: ["students", "fees", "payments", "invoices", "expenses", "fin_reports", "analytics", "documents"],
-  teacher: ["students", "attendance", "exams", "grades", "reports_cards", "timetable", "classes", "communication", "calendar", "documents", "elearning"],
-  student: ["portal", "elearning"],
-  parent: ["portal", "elearning"],
-  registrar: ["students", "admissions", "documents", "idcards", "certificates", "calendar"],
-  receptionist: ["students", "admissions", "calendar", "documents", "communication"],
-  librarian: ["library", "documents", "students"],
-  transport: ["transport", "students", "fees"],
-  hr: ["hr", "teachers", "documents"],
+  principal: ["students", "admissions", "teachers", "classes", "timetable", "attendance", "exams", "grades", "reports_cards", "analytics", "calendar", "documents", "certificates", "communication", "idcards", "settings", "elearning", "chat", "profile"],
+  accountant: ["students", "fees", "payments", "invoices", "expenses", "fin_reports", "analytics", "documents", "chat", "profile"],
+  teacher: ["students", "attendance", "exams", "grades", "reports_cards", "timetable", "classes", "communication", "calendar", "documents", "elearning", "chat", "profile"],
+  student: ["portal", "elearning", "chat", "profile"],
+  parent: ["portal", "elearning", "chat", "profile"],
+  registrar: ["students", "admissions", "documents", "idcards", "certificates", "calendar", "chat", "profile"],
+  receptionist: ["students", "admissions", "calendar", "documents", "communication", "chat", "profile"],
+  librarian: ["library", "documents", "students", "chat", "profile"],
+  transport: ["transport", "students", "fees", "chat", "profile"],
+  hr: ["hr", "teachers", "documents", "chat", "profile"],
 };
 export const can = (role: Role | string | undefined, perm: string) => {
   if (!role) return false;
@@ -442,20 +442,27 @@ function seed(): DB {
 }
 
 const KEY = "vitech-state-v1";
+function detectBrowserLang(): Lang {
+  if (typeof navigator === "undefined") return "en";
+  const browserLang = navigator.language.split("-")[0];
+  const supportedLangs: Lang[] = ["en", "fr", "es", "pt", "ar"];
+  return supportedLangs.includes(browserLang as Lang) ? browserLang as Lang : "en";
+}
+
 function load(): AppState {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw) as AppState;
       if (s?.db?.v === 3) {
-        if (!LANG_CODES.includes(s.prefs?.lang)) s.prefs = { theme: s.prefs?.theme === "dark" ? "dark" : "light", lang: "en", mt: false };
+        if (!LANG_CODES.includes(s.prefs?.lang)) s.prefs = { theme: s.prefs?.theme === "dark" ? "dark" : "light", lang: detectBrowserLang(), mt: false };
         if (!s.db.system) s.db.system = { version: "3.2.0", channel: "stable", autoUpdate: true, available: "3.3.0", history: [] };
         if (!s.db.school.reportCard) s.db.school.reportCard = { templateId: "classic", comment: "An excellent term — keep up the consistent effort.", stamp: "Official School Stamp", accent: "#1e49c9", showPhoto: true };
         return s;
       }
     }
   } catch { /* corrupted -> reseed */ }
-  return { db: seed(), session: null, prefs: { theme: "light", lang: "en", mt: false } };
+  return { db: seed(), session: null, prefs: { theme: "light", lang: detectBrowserLang(), mt: false } };
 }
 let state: AppState = load();
 const subs = new Set<() => void>();

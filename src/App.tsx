@@ -21,6 +21,9 @@ import HelpPage from "./pages/Help";
 import SetupPage from "./pages/Setup";
 import ElearningPage from "./pages/Elearning";
 import DownloadPage from "./pages/Download";
+import ChatPage from "./pages/Chat";
+import ProfilePage from "./pages/Profile";
+import CourseDetailPage from "./pages/CourseDetail";
 
 const useHash = () => {
   const [h, setH] = useState(window.location.hash.slice(1) || "/");
@@ -137,6 +140,12 @@ export default function App() {
       case "/app/settings": return <SettingsPage />;
       case "/app/help": return <HelpPage />;
       case "/app/setup": return user.role === "super" || user.role === "admin" ? <SetupPage nav={nav} /> : <ErrorPage code="403" title="Administrators only" body="The setup wizard is reserved for school administrators." nav={nav} />;
+      case "/app/chat": return <ChatPage />;
+      case "/app/profile": return <ProfilePage />;
+      case "/app/course": {
+        const courseId = new URLSearchParams(query ?? "").get("id") || "math-s6";
+        return <CourseDetailPage courseId={courseId} nav={nav} />;
+      }
       default: return <ErrorPage code="404" title="Page not found" body="The page you are looking for doesn't exist or was moved." nav={nav} />;
     }
   })();

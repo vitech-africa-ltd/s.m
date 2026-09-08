@@ -71,6 +71,7 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
     ]},
     { title: "Engagement", items: [
       { to: "/app/communication", icon: "comm", label: "Communication", short: "Comm", perm: "communication" },
+      { to: "/app/chat", icon: "chat", label: "Messages", short: "Chat", perm: "chat" },
       { to: "/app/announcements", icon: "megaphone", label: "Announcements", short: "News", perm: "communication" },
       { to: "/app/calendar", icon: "calendar", label: "Calendar", short: "Cal" },
       { to: "/app/library", icon: "book", label: "Library", short: "Lib", perm: "library" },
@@ -83,6 +84,7 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
       { to: "/app/audit", icon: "audit", label: "Audit logs", short: "Audit", perm: "audit" },
       { to: "/app/backups", icon: "database", label: "Backups", short: "Back", perm: "backups" },
       { to: "/app/settings", icon: "settings", label: "Settings", short: "Set", perm: "settings" },
+      { to: "/app/profile", icon: "user", label: "Profile", short: "Profile", perm: "profile" },
       { to: "/app/platform", icon: "globe", label: "Platform (SaaS)", short: "SaaS", perm: "dashboard", superOnly: true },
       { to: "/app/help", icon: "help", label: "Help & Support", short: "Help" },
     ]},
