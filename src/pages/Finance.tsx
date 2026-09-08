@@ -123,21 +123,6 @@ export function PaymentsPage() {
   );
 }
 
-export function InvoicesPage() {
-  const s = useApp();
-  const tt = useT();
-  const db = s.db;
-  
-  return (
-    <div>
-      <h1 className="font-display text-[26px] font-bold mb-5">{tt("Invoices")}</h1>
-      <div className="panel p-6">
-        <p className="text-ink-400">{tt("Invoice management - Coming soon")}</p>
-      </div>
-    </div>
-  );
-}
-
 export function ExpensesPage() {
   const s = useApp();
   const tt = useT();
@@ -207,7 +192,7 @@ export function FinReportsPage() {
         <Stat label="Total revenue" value={totalRevenue} icon="payment" tone="green" money={cur} />
         <Stat label="Total expenses" value={totalExpenses} icon="expenses" tone="red" money={cur} />
         <Stat label="Net profit" value={netProfit} icon="analytics" tone={netProfit >= 0 ? "green" : "red"} money={cur} />
-        <Stat label="Profit margin" value={Math.round((netProfit / totalRevenue) * 100)} icon="chart" tone="blue" />
+        <Stat label="Profit margin" value={totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0} icon="chart" tone="blue" />
       </div>
 
       <div className="panel p-6">
