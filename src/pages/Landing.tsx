@@ -103,11 +103,6 @@ export default function Landing({ nav }: { nav: (to: string) => void }) {
                 {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
               </select>
             </label>
-            <button onClick={() => nav("/login")} aria-label={tt("Login")} title={tt("Login")}
-              className="md:hidden w-9 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 flex items-center justify-center text-ink-600 dark:text-ink-200 hover:border-cobalt-400 hover:text-cobalt-600 dark:hover:text-cobalt-300 transition-all active:scale-95 cursor-pointer">
-              <Ic n="user" size={16} />
-            </button>
-            <button className="btn-o btn-sm hidden md:inline-flex" onClick={() => nav("/login")}><Ic n="user" size={14} />{tt("Login")}</button>
             <button onClick={() => nav("/register")} className="btn-p !h-9 sm:!h-10 !px-2.5 sm:!px-4 !text-[12px] sm:!text-sm !gap-1.5 min-w-0" aria-label={tt("Get Started")}>
               <Ic n="zap" size={14} className="shrink-0" /><span className="truncate max-w-[86px] min-[420px]:max-w-none">{tt("Get Started")}</span>
             </button>
