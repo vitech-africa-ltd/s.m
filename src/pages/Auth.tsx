@@ -62,7 +62,7 @@ export function Login({ nav, onDone }: { nav: (to: string) => void; onDone: () =
           <label className="flex items-center gap-1.5 h-9 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 pl-2.5 pr-1.5 cursor-pointer hover:border-cobalt-400 transition-colors">
             <Ic n="globe" size={15} className="text-cobalt-600 dark:text-cobalt-400 shrink-0" />
             <select className="bg-transparent border-0 outline-none text-[11.5px] sm:text-[12.5px] font-bold text-ink-700 dark:text-ink-100 cursor-pointer max-w-[76px] sm:max-w-none truncate pr-0.5" value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}>
-              {LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
+              {LANGS.map((l) => <option key={l.code} value={l.code}>{l.code.toUpperCase()}</option>)}
             </select>
           </label>
           <button className="btn-o btn-sm" onClick={() => nav("/")}><Ic n="chevL" size={14} />{tt("Back to site")}</button>

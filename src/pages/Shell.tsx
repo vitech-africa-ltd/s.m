@@ -151,7 +151,7 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
       <div className="border-t border-white/[0.08] p-3 flex items-center gap-2">
         <select value={lang} onChange={(e) => setPrefs({ lang: e.target.value as typeof lang })} aria-label={tt("Language")}
           className="flex-1 h-9 rounded-lg bg-white/[0.07] border border-white/[0.1] text-[12px] font-bold text-ink-200 px-2 focus:outline-none focus:border-cobalt-500 cursor-pointer">
-          {LANGS.map((l) => <option key={l.code} value={l.code} className="bg-ink-900">{l.native}</option>)}
+          {LANGS.map((l) => <option key={l.code} value={l.code} className="bg-ink-900">{l.code.toUpperCase()}</option>)}
         </select>
         <button className="w-9 h-9 rounded-lg bg-white/[0.07] border border-white/[0.1] text-ink-200 flex items-center justify-center cursor-pointer hover:bg-white/15 transition-colors" onClick={() => setPrefs({ theme: s.prefs.theme === "dark" ? "light" : "dark" })} aria-label="Toggle dark mode">
           <Ic n={s.prefs.theme === "dark" ? "sun" : "moon"} size={16} />
