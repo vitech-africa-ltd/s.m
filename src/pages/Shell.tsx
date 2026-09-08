@@ -100,12 +100,31 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
 
   const SideContent = (
     <div className="flex flex-col h-full">
-      <div className="px-4 pt-5 pb-3 flex items-center gap-2.5 border-b border-white/[0.08]">
-        <span className="w-9 h-9 rounded-lg bg-gold-400 text-ink-950 flex items-center justify-center font-display font-bold text-lg shrink-0">V</span>
-        <div className="min-w-0 flex-1">
-          <div className="font-display font-bold text-[14.5px] truncate">{s.db.school.name}</div>
-          <div className="text-[10px] text-ink-400 truncate">{s.db.school.academicYear} · {s.db.school.term}</div>
+      <div className="px-4 pt-5 pb-3 border-b border-white/[0.08]">
+        <div className="flex items-center gap-2.5 mb-2">
+          <span className="w-9 h-9 rounded-lg bg-gold-400 text-ink-950 flex items-center justify-center font-display font-bold text-lg shrink-0">V</span>
+          <div className="min-w-0 flex-1">
+            <div className="font-display font-bold text-[14.5px] truncate">{s.db.school.name}</div>
+            <div className="text-[10px] text-ink-400 truncate">{s.db.school.academicYear} · {s.db.school.term}</div>
+          </div>
         </div>
+        {/* Campus selector in sidebar */}
+        {s.db.campuses && s.db.campuses.length > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            <Ic n="pin" size={14} className="text-ink-400 shrink-0" />
+            <select 
+              className="flex-1 h-8 rounded-lg bg-white/[0.07] border border-white/[0.1] text-[11px] font-bold text-ink-200 px-2 focus:outline-none focus:border-cobalt-500 cursor-pointer"
+              defaultValue={s.db.campuses[0]?.id || ""}
+              aria-label="Select campus"
+            >
+              {s.db.campuses.map((campus) => (
+                <option key={campus.id} value={campus.id} className="bg-ink-900">
+                  {campus.name} — {campus.city}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       <nav className="flex-1 overflow-y-auto px-2 pb-4">
         {NAV.map((g) => {
@@ -182,6 +201,24 @@ export default function Shell({ nav, path, children, onLogout }: { nav: (to: str
           </button>
 
           <span className="hidden xl:inline-flex chip bg-gold-100 text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 !px-3 ml-1">{s.db.school.term} · {s.db.school.academicYear}</span>
+
+          {/* Campus selector */}
+          {s.db.campuses && s.db.campuses.length > 0 && (
+            <div className="hidden md:flex items-center gap-2 ml-2">
+              <Ic n="pin" size={15} className="text-ink-400" />
+              <select 
+                className="input !h-9 !w-auto !text-[12px] font-semibold cursor-pointer"
+                defaultValue={s.db.campuses[0]?.id || ""}
+                aria-label="Select campus"
+              >
+                {s.db.campuses.map((campus) => (
+                  <option key={campus.id} value={campus.id}>
+                    {campus.name} — {campus.city}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
             <button className="w-9 h-9 rounded-lg flex items-center justify-center text-ink-500 dark:text-ink-300 hover:bg-ink-100/80 dark:hover:bg-ink-800 hover:text-cobalt-600 dark:hover:text-cobalt-300 transition-colors cursor-pointer" onClick={() => setPrefs({ theme: s.prefs.theme === "dark" ? "light" : "dark" })} aria-label="Toggle dark mode" title={s.prefs.theme === "dark" ? "Light mode" : "Dark mode"}>

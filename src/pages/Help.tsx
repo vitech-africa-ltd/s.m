@@ -1,8 +1,19 @@
 import { Ic } from "../components/icons";
 import { useT } from "../lib/i18n";
+import { toast } from "../components/ui";
 
 export default function HelpPage() {
   const tt = useT();
+  
+  const handleViewDocs = () => {
+    window.open("https://docs.vitech.academy", "_blank");
+  };
+  
+  const handleContactSupport = () => {
+    toast("Opening support chat...");
+    // Ici vous pouvez ouvrir un chat de support ou un formulaire
+    window.open("mailto:support@vitech.academy?subject=Support Request", "_blank");
+  };
   
   return (
     <div>
@@ -15,7 +26,7 @@ export default function HelpPage() {
           </div>
           <h2 className="font-display font-bold text-[18px] mb-2">{tt("Documentation")}</h2>
           <p className="text-ink-400 text-[13px] mb-4">{tt("Read our documentation to learn more about this error.")}</p>
-          <button className="btn-o btn-sm">{tt("View docs")}</button>
+          <button className="btn-o btn-sm" onClick={handleViewDocs}>{tt("View docs")}</button>
         </div>
         
         <div className="panel p-6">
@@ -24,7 +35,7 @@ export default function HelpPage() {
           </div>
           <h2 className="font-display font-bold text-[18px] mb-2">{tt("Contact Support")}</h2>
           <p className="text-ink-400 text-[13px] mb-4">{tt("Get help from our support team")}</p>
-          <button className="btn-p btn-sm">{tt("Contact us")}</button>
+          <button className="btn-p btn-sm" onClick={handleContactSupport}>{tt("Contact us")}</button>
         </div>
       </div>
       
@@ -36,12 +47,36 @@ export default function HelpPage() {
             { q: "How do I record a payment?", a: "Go to Payments → Record payment and select the student." },
             { q: "How do I generate report cards?", a: "Go to Report cards, select the exam and class, then click Print." },
             { q: "How do I change the school settings?", a: "Go to Settings and update your school information." },
+            { q: "How do I access E-Learning?", a: "Go to Academics → E-Learning to access courses and live classes." },
+            { q: "How do I print ID cards?", a: "Go to Management → ID cards, select the person and click Print." },
           ].map((faq, i) => (
             <div key={i} className="rounded-lg border border-ink-100 dark:border-ink-800 p-4">
               <h3 className="font-bold text-[14px] mb-2">{faq.q}</h3>
               <p className="text-[13px] text-ink-500 dark:text-ink-300">{faq.a}</p>
             </div>
           ))}
+        </div>
+      </div>
+      
+      <div className="panel p-6 mt-5">
+        <h2 className="font-display font-bold text-[18px] mb-4">{tt("System Information")}</h2>
+        <div className="grid sm:grid-cols-2 gap-4 text-[13px]">
+          <div>
+            <div className="text-ink-400 mb-1">Version</div>
+            <div className="font-bold">3.2.0</div>
+          </div>
+          <div>
+            <div className="text-ink-400 mb-1">Last updated</div>
+            <div className="font-bold">{new Date().toLocaleDateString()}</div>
+          </div>
+          <div>
+            <div className="text-ink-400 mb-1">Support email</div>
+            <div className="font-bold">support@vitech.academy</div>
+          </div>
+          <div>
+            <div className="text-ink-400 mb-1">Documentation</div>
+            <div className="font-bold">docs.vitech.academy</div>
+          </div>
         </div>
       </div>
     </div>
