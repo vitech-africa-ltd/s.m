@@ -17,7 +17,7 @@ import AnalyticsPage from "./pages/Analytics";
 import CommunicationPage, { AnnouncementsPage } from "./pages/Communication";
 import CalendarPage from "./pages/CalendarPage";
 import SettingsPage from "./pages/SettingsPage";
-import { LibraryPage, TransportPage, HRPage, DocumentsPage, CertificatesPage, VerifyPage, IDCardsPage, AuditPage, BackupsPage, AnalyticsPage, PlatformPage } from "./pages/More";
+import { LibraryPage, TransportPage, HRPage, DocumentsPage, CertificatesPage, VerifyPage, IDCardsPage, AuditPage, BackupsPage, PlatformPage } from "./pages/More";
 import { StudentPortal, ParentPortal, TeacherPortal } from "./pages/Portals";
 import HelpPage from "./pages/Help";
 import SetupPage from "./pages/Setup";
