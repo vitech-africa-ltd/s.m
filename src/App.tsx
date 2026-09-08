@@ -121,7 +121,7 @@ export default function App() {
       case "/app/exams": return <ExamsPage />;
       case "/app/grades": return <GradesPage />;
       case "/app/reportcards": return <ReportCardsPage />;
-      case "/app/elearning": return <ElearningPage />;
+      case "/app/elearning": return <ElearningPage nav={nav} />;
       case "/app/fees": return <FeesPage />;
       case "/app/payments": return <PaymentsPage />;
       case "/app/invoices": return <InvoicesPage />;
